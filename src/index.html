@@ -11,16 +11,17 @@
 	<body>
 		<main>
 			<div id="top-container " class="flex  justify-center bg-[#2eb966] rounded-br-3xl rounded-bl-3xl">
-				<div class="border border-red-500 w-[80%]">
-					<div id="slogan" class="flex flex-col items-center justify-center w-full border-black border mb-4">
+				<div class="order order-red-500 w-[80%]">
+					<div id="slogan" class="flex flex-col items-center justify-center w-full order-black order mb-4">
 						<h1 class="text-3xl font-bold w-fit order">Mow delivered</h1>  
 						<h1 class="text-3xl font-bold w-fil order">just.  like. that.</h1>  
 					</div>
 
-					<div id="address-input" class=" border border-red-500">
+					<div id="address-input" class=" order order-red-500">
 						<div>
 							<div class="mt-2">
 								<div class="flex h-[3rem] rounded-sm bg-white outline outline-1 -outline-offset-1 outline-gray-300 has-[input:focus-within]:outline has-[input:focus-within]:outline-2 has-[input:focus-within]:-outline-offset-2 has-[input:focus-within]:outline-indigo-600">
+									<form class="flex w-full border border-red-500" id="address-form">
 									<div class="grid shrink-0 grid-cols-1 focus-within:relative">
 										<svg class=" ml-2 pointer-events-none col-start-1 row-start-1 mr-2 size-5- self-center justify-self-end text-gray-500 sm:size-4-" width="27" height="25" viewBox="0 0 73 68" fill="none" xmlns="http://www.w3.org/2000/svg">
 											<path 
@@ -34,6 +35,7 @@
 									<input type="text" name="address" id="input-address" 
 													  class="block min-w-0 grow py-1.5 pl-1 pr-3 text-base text-gray-900 placeholder:text-gray-400 focus:outline focus:outline-0 sm:text-sm/6"
 													  placeholder="Enter Address">
+									</form>
 								</div>
 							</div>
 						</div>
@@ -75,6 +77,6 @@
 							</div>
 			</nav>
 		</main>
-		<script src="index.js"></script>
+		<script src="autocomplete.js" type="module"></script>
 	</body>
 </html>
