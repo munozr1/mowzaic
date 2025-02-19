@@ -1,26 +1,18 @@
 import './style.css'
-import javascriptLogo from './javascript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.js'
+import NavBar from './components/Navbar.js'
+//import EditSchedules from './components/EditSchedules'
+
 
 document.querySelector('#app').innerHTML = `
-  <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Mow delivered</h1>
-    <h1>just like that</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
+  <div class="mt-5">
+    
+    <div class="flex flex-col w-full  border-red-500 border">
+    <p class="font-bold">Mow delivered</p>
+    <p class="font-bold">just like that</p>
     </div>
-    <form><input id='address-input' placeholder="Enter address" /></form>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
+    
+    <form class="mt-8"><input class="shadow border border-red-500 p-2 rounded-sm" id='address-input' placeholder="Enter address" /></form>
+    <edit-schedules/>
+    
   </div>
 `
-
-setupCounter(document.querySelector('#counter'))

@@ -1,5 +1,6 @@
 import { MapboxAddressAutofill } from '@mapbox/search-js-web'
 // instantiate a <mapbox-address-autofill> element using the MapboxAddressAutofill class
+const location = { }
 const autofillElement = new MapboxAddressAutofill()
 
 
@@ -32,12 +33,17 @@ the_form.appendChild(autofillElement);
 autofillElement.addEventListener('retrieve', (event) => {
     // Extract the selected address feature
     const feature = event.detail.features[0];
+    const [longitude, lattitude] = feature.geometry.coordinates
+    location.longitude = longitude
+    location.lattitude = lattitude
 
     // Log all properties of the selected address
-    console.log('Full Address:', feature.properties.full_address);
-    console.log('Street:', feature.properties.address_line1);
-    console.log('City:', feature.properties.address_level2); // City
-    console.log('State:', feature.properties.address_level1); // State
-    console.log('Postal Code:', feature.properties.postcode); // ZIP code
-    console.log('Country:', feature.properties.country); // Country
+    //location.Full Address:', feature.properties.full_address);
+    location.street = feature.properties.address_line1
+    location.city= feature.properties.address_level2
+    location.state = feature.properties.address_level1
+    location.postal = feature.properties.postcode
+    location.country = feature.properties.country_code
+
+    console.log(location)
 });
