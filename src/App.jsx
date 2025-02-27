@@ -1,10 +1,12 @@
-//import './App.css'
-import Home from './pages/Home'
+import { NavigationProvider } from './NavigationContext.jsx'
+import Router from './pages/Page.jsx'
 
 function App() {
 
   return (
-	<Home/>
+	  <NavigationProvider>
+	  <Router />
+	  </NavigationProvider>
   )
 }
 

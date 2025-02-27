@@ -2,7 +2,8 @@ import AddressAutofillBar from '../components/AddressAutofillBar'
 import {  useState } from 'react'
 import DayCard from '../components/DayCard';
 import BookingForm from '../components/BookingForm';
-import { MAPBOX_TOKEN, MAPBOX_URL } from '../constants';
+import { useNavigation } from '../NavigationContext';
+import ThankYouBooked from './ThankYouBooked';
 
 
 
@@ -20,10 +21,13 @@ function gen14days(){
 
 
 
-function Home() {
+function NewBookingPage() {
 	const [availability, setAvailability] = useState(gen14days())
-	const [selected, setSelected] = useState(null)
+	const [selected, setSelected] = useState({})
 	const [selectedAddress, setSelectedAddress] = useState(null)
+	//const { navigate } = useNavigation();
+	const [bookingState, setBookingState] = useState('address')
+
 
 	const fetchBookings = async () => {
 		const res = await fetch('http://localhost:3000/availability/this-week')
@@ -55,14 +59,14 @@ function Home() {
 		fetchBookings()
 	}
 
-	const handleSelectBookingDate = (index) => {
-		setSelected(index);
-		const id = `day-${index}`;
+	const handleSelectBookingDate = (data) => {
+		setSelected(data);
+		const id = `day-${data.id}`;
 		document.getElementById(id).scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});
 
 	}
 	const handleBook = async (bookingFormData) => {
-		const data = {selected, ...bookingFormData, ...selectedAddress}
+		const data = {...selected, ...bookingFormData, ...selectedAddress}
 		//post data to server
 		const res = await fetch('http://localhost:3000/book', {
 			method: 'POST',
@@ -74,6 +78,40 @@ function Home() {
 		})
 
 		console.log(await res.json())
+		//navigate('/thank-you')
+		setBookingState('thank-you')
+
+	}
+
+
+	const renderBookingState = () => {
+		switch(bookingState){
+			case 'address':
+				return (
+				<div id="booking-form-container" className="items-center px-8  w-[100vw] lg:w-[50%] self-center ">
+					<div id="gayTrick" className="snap-x p-2 overflow-x-scroll  h-[8rem] flex flex-col no-scrollbar ">
+						<div id="calendarContainer" className="p1 no-scrollbar  mt-5 flex ">
+							{availability.map((d, index) => (
+								<DayCard 
+								key={index}
+								idx={index}
+								day= {new Date(d)}
+								selected={selected}
+								onSelect={handleSelectBookingDate}
+								/>
+							)) }
+						</div>
+					</div>
+					<div className="mb-5">
+						<BookingForm onBook={handleBook} />
+					</div>
+				</div>
+				)
+			case 'thank-you':
+				return (<ThankYouBooked/>)
+			default:
+				return (<div> unknown bookingState {bookingState}</div>)
+		}
 
 	}
 
@@ -90,27 +128,9 @@ function Home() {
 					/>
 				</div>
 			</div>
-			<div id="booking-form-container" className="items-center px-8  w-[100vw] lg:w-[50%] self-center ">
-				<div id="gayTrick" className="snap-x p-2 overflow-x-scroll  h-[8rem] flex flex-col no-scrollbar ">
-					<div id="calendarContainer" className="p1 no-scrollbar  mt-5 flex ">
-						{availability.map((d, index) => (
-							<DayCard 
-							key={index}
-							idx={index}
-							day= {new Date(d)}
-							selected={selected}
-							onSelect={handleSelectBookingDate}
-							/>
-						)) }
-					</div>
-				</div>
-				<div className="mb-5">
-					<BookingForm onBook={handleBook} />
-				</div>
-			</div>
-		
+		{renderBookingState()}
 		</div>
 	)
 }
 
-export default Home 
+export default NewBookingPage;
