@@ -13,9 +13,11 @@
     "@heroicons/react": "^2.2.0",
     "@mapbox/search-js-react": "^1.0.0",
     "@tailwindcss/vite": "^4.0.7",
+    "lucide-react": "^0.476.0",
     "motion": "^12.4.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
     "tailwindcss": "^4.0.7"
   },
   "devDependencies": {

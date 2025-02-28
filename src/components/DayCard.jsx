@@ -18,7 +18,7 @@ function DayCard(props) {
 		{formatDay(props.day)}
 		</div>
 		<div className=" font-mono self-center">
-		{props.day.toLocaleDateString('en-US', { weekday: 'short' })}
+		{props.day.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase()}
 		</div>
 		</div>
 		</>

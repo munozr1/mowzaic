@@ -1,43 +1,33 @@
 import PropTypes from 'prop-types';
 
-function AccessCode({id, onDelete}) {
-	const maxAccessCodeLength = 20;
+function AccessCode({index, onDelete}) {
 
 	return (
-		<div key={id} className="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-2">
-		  <label 
-		>
-		{id === 1 ? 'Access Codes': ''} 
-		</label>
-		  <div className="flex mt-2  sm:col-span-1 sm:mt-0">
-			  <div>
-			    <span 
-				className={`${id != 1 ? 'hover:cursor-pointer text-red-300':''}`}
-				onClick={() => id != 1 ? onDelete(id) : null}>
-				{id === 1 ? 'lable: ' : 'remove'}
-			     </span>
-			    <input
-				id = {`label-${id}`}
-			      placeholder="Ex: driveway gate"
-			      className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-green-600 sm:max-w-2xl sm:text-sm/6"
-			      maxLength={maxAccessCodeLength}
-			    />
-			  </div>
-		  </div>
-		  <div className="sm:col-span-1">
-		    <span className="text-gray-500 text-sm">Code:</span>
-		    <input
-			id = {`code-${id}`}
-		      placeholder="1234"
-		      className="block wfull rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 outline-gray-300 placeholder:text-gray-400 focus:outline-green-600 sm:max-w-2xl sm:text-sm/6"
-		    />
-		  </div>
+           <div key={index} id={`code-container-${index}`} className="mr6 w-full space-x-2">
+		{index > 1 && <a onClick={() => onDelete(index)} className="hover:cursor-pointer m-0 text-red-300 hover:text-red-500">remove</a>}
+		<div className="flex">
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <input id={`label-${index}`}
+                    type="text"
+                    className="px-4 py-2 border border-gray-300 rounded-md focus:outline-green-600 "
+                    placeholder="label (e.g., Driveway Gate)"
+                  />
+                  <div className="flex space-x-2">
+                    <input id={`code-${index}`}
+                      type="text"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-green-600 "
+                      placeholder="code (e.g., 1234)"
+                    />
+                  </div>
+                </div>
 		</div>
+
+              </div>	
 	)
 }
 
 AccessCode.propTypes = {
-	id: PropTypes.number.isRequired,
+	index: PropTypes.number.isRequired,
 	onDelete: PropTypes.func.isRequired,
 };
 

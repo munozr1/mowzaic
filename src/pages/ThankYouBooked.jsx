@@ -16,7 +16,7 @@ function ThankYouBooked() {
           className="inline-block px-4 py-1 mb-6 bg-[#2EB966]/10 backdrop-blur-sm rounded-full"
         >
           <span className="text-[#2EB966] text-sm font-medium">
-	   Your sevice has successfully been booked!
+	   your sevice has successfully been booked!
           </span>
         </motion.div>
         
@@ -26,7 +26,7 @@ function ThankYouBooked() {
           transition={{ delay: 0.3 }}
           className="text-5xl md:text-6xl font-bold  text[#2EB966] mb-6"
         >
-          Thank you!
+          Thank You!
         </motion.h1>
         
         <motion.div
@@ -35,7 +35,7 @@ function ThankYouBooked() {
           transition={{ delay: 0.3 }}
           className="text-xl md:text-2xl text-[#2EB966] "
         >
-          <span className="font-bold">Mowzaic</span>
+          <span className="font-bold">mowzaic</span>
         </motion.div>
       </motion.div>
     </div>
