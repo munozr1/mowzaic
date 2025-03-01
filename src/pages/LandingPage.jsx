@@ -1,37 +1,22 @@
-import { useState } from "react";
+//import { useState } from "react";
 import { Search, MapPin, Clock } from "lucide-react";
 import { motion } from "motion/react";
 import AddressAutofillBar from "../components/AddressAutofillBar";
+import { encodeJson } from "../utils";
+import { useNavigation } from "../NavigationContext";
 
 const LandingPage = () => {
-  const [address, setAddress] = useState("");
-  const handleSubmit = () => {
+  const {navigate} =  useNavigation();
+  const handleSubmit = (place) => {
     // Handle address submission here - typically would redirect to main app
-    console.log("Address submitted:", address);
+    const encodedData = encodeJson(place)
+    navigate('/book', {gt: encodedData})
   };
 
   return (
 	  <>
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <span className="text-xl font-bold text-[#2EB966]">mowzaic</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <a href="/login" className="text-gray-800 hover:text-[#2EB966] text-sm font-medium">
-              log in
-            </a>
-            <a
-              href="/signup"
-              className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800"
-            >
-              sign up
-            </a>
-          </div>
-        </div>
-      </div>
+      
       {/* Hero Section */}
       <div 
         className="flex-1 bg-cover bg-center" 
@@ -59,19 +44,20 @@ const LandingPage = () => {
 	  	<AddressAutofillBar onSelect={handleSubmit} />
               </div>
               
-              <div className="md:w-auto bg-white rounded-md flex items-center overflow-hidden">
-                <select className="px-4 py-4 focus:outline-none appearance-none pr-8 text-gray-700 bg-transparent">
+              <div className="md:w-auto bg-white rounded-md flex items-center justify-center overflow-hidden">
+                <select id="booking-week" className="px-4 py-4 focus:outline-none appearance-none pr-8 text-gray-700 bg-transparent">
                   <option>this week</option>
                   <option>next week</option>
                 </select>
-                <div className="px-2">
-                  <Clock className="h-5 w-5 text-gray-400" />
+                <div className="pr-5">
+                  <Clock className="h-5  w-5 text-gray-400" />
                 </div>
               </div>
               
               <button
                 type="button"
                 className="md:w-auto bg-[#2EB966] hover:bg-[#2EB966]/90 text-white font-bold py-4 px-8 rounded-md flex items-center justify-center"
+	  	onClick={handleSubmit}
               >
                 <Search className="h-5 w-5 mr-2" />
               </button>

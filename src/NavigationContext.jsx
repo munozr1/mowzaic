@@ -7,10 +7,14 @@ export const NavigationProvider = ({ children }) => {
   const [path, setPath] = useState(window.location.pathname);
 
   // Function to navigate
-  const navigate = (newPath) => {
-    window.history.pushState({}, "", newPath);
-    setPath(newPath);
-  };
+  const navigate = (newPath, queryParams = {}) => {
+  const searchParams = new URLSearchParams(queryParams).toString();
+  const fullPath = searchParams ? `${newPath}?${searchParams}` : newPath;
+  
+  window.history.pushState({}, "", fullPath);
+  setPath(fullPath);
+};
+
 
   // Listen for browser back/forward navigation
   useEffect(() => {

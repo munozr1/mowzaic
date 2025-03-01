@@ -2,15 +2,17 @@ import { useState , useEffect} from "react";
 import PropTypes from "prop-types";
 import { MAPBOX_TOKEN, MAPBOX_URL } from "../constants";
 
-const AddressAutofillBar = ({ onSelect }) => {
+const AddressAutofillBar = ({ onSelect , initialAddress}) => {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [userLocation, setUserLocation ] = useState(null)
+  const [userLocation, setUserLocation ] = useState({})
   useEffect(() => {
+	setQuery(initialAddress?.address || '')
 	if (!("geolocation" in navigator))  return;
 	navigator.geolocation.getCurrentPosition(setUserLocation);
   },[]);
-  useEffect(() => {console.log(userLocation)}, [userLocation])
+
+  useEffect(() => {return}, [userLocation])
   const fetchSuggestions = async (input) => {
     if (!input) {
       setSuggestions([]);
@@ -52,7 +54,6 @@ const extractAddressDetails = (place) => {
     setQuery(place.place_name);
     setSuggestions([]);
     onSelect(extractAddressDetails(place)); // Send selected address to parent
-    console.log(extractAddressDetails(place));
   };
 
   return (
@@ -89,6 +90,7 @@ const extractAddressDetails = (place) => {
 
 AddressAutofillBar.defaultProps = {
   onSelect: PropTypes.func.isRequired,
+  initialAddress: PropTypes.object.isRequired
 };
 
 export default AddressAutofillBar;

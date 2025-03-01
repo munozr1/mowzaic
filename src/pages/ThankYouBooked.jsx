@@ -35,7 +35,7 @@ function ThankYouBooked() {
           transition={{ delay: 0.3 }}
           className="text-xl md:text-2xl text-[#2EB966] "
         >
-          <span className="font-bold">mowzaic</span>
+          <span className="font-bold">- mowzaic</span>
         </motion.div>
       </motion.div>
     </div>

@@ -1,11 +1,15 @@
+import PageLayout from './components/NavBar.jsx'
 import { NavigationProvider } from './NavigationContext.jsx'
-import Router from './pages/Page.jsx'
+import MainContent from './pages/MainContent.jsx'
 
 function App() {
 
   return (
 	  <NavigationProvider>
-	  <Router />
+	  <PageLayout >
+	  <MainContent/>
+	  </PageLayout>
+	  
 	  </NavigationProvider>
   )
 }

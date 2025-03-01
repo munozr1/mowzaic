@@ -1,9 +1,11 @@
-import AddressAutofillBar from '../components/AddressAutofillBar'
-import {  useState } from 'react'
+import {  useEffect, useState } from 'react'
 import DayCard from '../components/DayCard';
-import BookingForm from '../components/BookingForm';
+import BookingFormDetails from '../components/BookingForm';
 import ThankYouBooked from './ThankYouBooked';
 import {motion} from "motion/react";
+import { useNavigation } from '../NavigationContext';
+import { decodeJson, getParam } from '../utils';
+import AddressAutofillBar from '../components/AddressAutofillBar';
 
 function gen14days(){
 	const today = new Date();  
@@ -21,10 +23,19 @@ function gen14days(){
 
 function NewBookingPage() {
 	const [availability, setAvailability] = useState(gen14days())
-	const [selected, setSelected] = useState({})
-	const [selectedAddress, setSelectedAddress] = useState(null)
-	//const { navigate } = useNavigation();
+	const [selectedDate, setSelectedDate] = useState({})
+	const [selectedAddress, setSelectedAddress] = useState({})
 	const [bookingState, setBookingState] = useState('address')
+	const [timeSlot, setTimeSlot] = useState(3);
+
+	const timeSlots = ['early (7am-9am)', 'mid (10am-12pm)', 'late (1pm-4pm)', 'anytime']
+
+	useEffect(() => {
+		setBookingState('fill-form');
+		const gt = getParam('gt');
+		if (!gt) {setSelectedAddress({}); return}
+		setSelectedAddress(decodeJson(gt))
+	},[]);
 
 
 	const fetchBookings = async () => {
@@ -45,33 +56,31 @@ function NewBookingPage() {
 	  if (cities.includes(city)) return true;
 	  return false;
 	}
-	
-	const handleSelectAddress = (address) => {
-		//const [lat, lon] = address.coordinates;
-		const inrange = isInPlano(address.city)
-		if (!inrange) {
-			alert('We currently only service Plano, Texas')
-			return
-		}
-		setSelectedAddress(address)
-		fetchBookings()
-		setBookingState('fill-form')
-	}
 
+	const handleChangeAddress = (data) => {
+		setSelectedAddress(data)
+	}
+	
 	const handleSelectBookingDate = (data) => {
-		setSelected(data);
+		setSelectedDate(data);
 		const id = `day-${data.id}`;
 		document.getElementById(id).scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'});
 
 	}
 	const handleBook = async (bookingFormData) => {
-		if (selected == {}) {
-			alert("You must select a date");
-			document.getElementById("choose-date-message").classList.toggle("text-red-500");
+		if (!selectedAddress.address) {
+			const addressErr = document.getElementById("choose-address-message")
+			addressErr.classList.remove("hidden");
 			return
 
-		}
-		const data = {...selected, ...bookingFormData, ...selectedAddress}
+		} else {document.getElementById("choose-address-message").classList.add('hidden')}
+		if (!selectedDate.id) {
+			const dateErr = document.getElementById("choose-date-message")
+			dateErr.classList.remove("hidden");
+			return
+
+		} else {document.getElementById("choose-date-message").classList.add('hidden')}
+		const data = {timeSlot,...selectedDate, ...bookingFormData, ...selectedAddress}
 		//post data to server
 		const res = await fetch('http://localhost:3000/book', {
 			method: 'POST',
@@ -81,13 +90,12 @@ function NewBookingPage() {
 			},
 			body: JSON.stringify(data)
 		})
+		console.log(res) //TODO: do not log
 
-		console.log(await res.json())
 		//navigate('/thank-you')
 		setBookingState('thank-you')
 
 	}
-
 	
 
 	const renderBookingState = () => {
@@ -99,27 +107,11 @@ function NewBookingPage() {
 				<motion.div id="booking-form-container"
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.6 , delay: 0.8}}
+				transition={{ duration: 0.6 , delay: 0.5}}
 				//className="max-w-2xl mx-auto"
-				className="items-center px-2  w-[100vw] lg:w-[50%] self-center "
+				className="w-[100vw] lg:w-[100%] overflow-hidden items-center px-2 place-items-enter self-center "
 			      >
-					<div id="gayTrick" className="snap-x p-2 overflow-x-scroll  h-[8rem] flex flex-col no-scrollbar ">
-						<div id="calendarContainer" className="p1 no-scrollbar  mt-5 flex ">
-							{availability.map((d, index) => (
-								<DayCard 
-								key={index}
-								idx={index}
-								day= {new Date(d)}
-								selected={selected}
-								onSelect={handleSelectBookingDate}
-								/>
-							)) }
-						</div>
-					</div>
-					<p className="text-gray-400 text-center" id="choose-date-message">please select a date</p>
-					<div className="mb-5">
-					<BookingForm onBook={handleBook} />
-					</div>
+					<BookingFormDetails onBook={handleBook} />
 				</motion.div>
 				)
 			case 'thank-you':
@@ -132,23 +124,6 @@ function NewBookingPage() {
 
 	return (
 		<div className=" bg-white min-h-[100vh] flex flex-col  place-items-enter ">
-			<div
-			id="header"
-			className={`bg-[#2EB966] flex flex-col transition-all duration-600  rounded-b-2xl lg:rounded-none  ${bookingState === "address" ? "lg:h[30rem]" : "h[12rem]"}`}
-			>
-				<div className={`mt-5 flex flex-wrap transition-all duration-500 ${bookingState == "address" ? 'mt-[5rem] ': ''} h-[4.5rem] mb-2  justify-center `}>
-					<h1 className="text-2xl  lg:text-4xl font-mono font-bold mr-3">mow delivered,</h1>
-					<h1 className="text-2xl lg:text-4xl font-mono font-bold mr3">just like that.</h1>
-				</div>
-				<div className="mt-0  flex lg:w-full justify-center ">
-					<AddressAutofillBar
-					onSelect={handleSelectAddress}
-					/>
-				</div>
-				<div className="mt-2 mb-8 flex lg:w-full justify-center ">
-					<button className={`${bookingState === "fill-form" ? 'hidden' : ''} lg:w-[24rem] text-white font-mono font-bold bg-black rounded-md w-[20rem] h-[2.5rem]`}>start booking</button>	
-				</div>
-			</div>
 		{renderBookingState()}
 		</div>
 	)
