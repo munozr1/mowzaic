@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Menu, X, Home, Truck, CreditCard, UserCircle, Settings } from "lucide-react";
+import { Menu, X, Home, UserCircle, Newspaper } from "lucide-react";
 import { useNavigation } from "../NavigationContext";
 import PropTypes from "prop-types";
 
@@ -9,7 +9,7 @@ const PageLayout = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
-  const {path} = useNavigation
+  const {path, navigate} = useNavigation()
   // Check if mobile on mount and when window resizes
   useEffect(() => {
     const checkIfMobile = () => {
@@ -30,11 +30,9 @@ const PageLayout = ({ children }) => {
   }, []);
 
   const navigationItems = [
-    { icon: Home, name: "Home", path: "/" },
-    { icon: Truck, name: "Delivery Info", path: "/delivery-info" },
-    { icon: CreditCard, name: "Payment", path: "/payment" },
-    { icon: UserCircle, name: "Profile", path: "/profile" },
-    { icon: Settings, name: "Settings", path: "/settings" },
+    { icon: Newspaper, name: "New Booking", path: "/book" },
+    { icon: Home, name: "Manage Properites", path: "/manage" },
+    { icon: UserCircle, name: "Account", path: "/" },
   ];
 
   return (
@@ -65,9 +63,9 @@ const PageLayout = ({ children }) => {
             return (
               <a
                 key={item.name}
-                to={item.path}
+                onClick={() => navigate(item.path)}
                 className={
-                  `flex items-center px-4 py-3 rounded-md text-sm font-medium transition-colors
+                  `hover:cursor-pointer flex items-center px-4 py-3 rounded-md text-sm font-medium transition-colors
                   ${isActive? "bg-[#2EB966] text-white": "text-gray-600 hover:bg-gray-100"}`
                 }
               >

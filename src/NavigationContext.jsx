@@ -37,4 +37,3 @@ NavigationProvider.propTypes = {
 
 // Hook to use the navigation
 export const useNavigation = () => useContext(NavigationContext);
-

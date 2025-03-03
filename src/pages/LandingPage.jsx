@@ -6,10 +6,11 @@ import { encodeJson } from "../utils";
 import { useNavigation } from "../NavigationContext";
 
 const LandingPage = () => {
-  const {navigate} =  useNavigation();
+  const { navigate } =  useNavigation();
   const handleSubmit = (place) => {
     // Handle address submission here - typically would redirect to main app
     const encodedData = encodeJson(place)
+    localStorage.setItem('hasVisited', 'true')
     navigate('/book', {gt: encodedData})
   };
 
@@ -57,7 +58,7 @@ const LandingPage = () => {
               <button
                 type="button"
                 className="md:w-auto bg-[#2EB966] hover:bg-[#2EB966]/90 text-white font-bold py-4 px-8 rounded-md flex items-center justify-center"
-	  	onClick={handleSubmit}
+	  	          onClick={handleSubmit}
               >
                 <Search className="h-5 w-5 mr-2" />
               </button>
