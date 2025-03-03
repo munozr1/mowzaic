@@ -1,24 +1,25 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
-const NavigationContext = createContext();
+export const NavigationContext = createContext();
 
 export const NavigationProvider = ({ children }) => {
-  const [path, setPath] = useState(window.location.pathname);
+  const [path, setPath] = useState(window.location.pathname + window.location.search);
 
   // Function to navigate
   const navigate = (newPath, queryParams = {}) => {
-  const searchParams = new URLSearchParams(queryParams).toString();
-  const fullPath = searchParams ? `${newPath}?${searchParams}` : newPath;
-  
-  window.history.pushState({}, "", fullPath);
-  setPath(fullPath);
-};
-
+    const searchParams = new URLSearchParams(queryParams).toString();
+    const fullPath = searchParams ? `${newPath}?${searchParams}` : newPath;
+    
+    window.history.pushState({}, "", fullPath);
+    setPath(fullPath);
+  };
 
   // Listen for browser back/forward navigation
   useEffect(() => {
-    const onPopState = () => setPath(window.location.pathname);
+    const onPopState = () => {
+      setPath(window.location.pathname + window.location.search);
+    };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
@@ -29,7 +30,6 @@ export const NavigationProvider = ({ children }) => {
     </NavigationContext.Provider>
   );
 };
-
 
 NavigationProvider.propTypes = {
   children: PropTypes.node.isRequired,
