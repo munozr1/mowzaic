@@ -94,8 +94,8 @@ const PageLayout = ({ children }) => {
           </div>
           
           <div className="px-4">
-            <button className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
-              Login
+            <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
+              login
             </button>
           </div>
         </header>

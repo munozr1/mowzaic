@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import PropTypes from 'prop-types';
 import { motion } from "motion/react";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import AccessCode from "./AcessCode";
 import AddressAutofillBar from "./AddressAutofillBar";
@@ -25,6 +25,7 @@ const BookingFormDetails = ({ onSubmit }) => {
   const [selectedDate, setSelectedDate] = useState({});
   const [timeSlot, setTimeSlot] = useState(3);
   const [availability] = useState(gen14days());
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { handleSubmit, register, watch, formState: { errors } } = useForm();
   const additionalOptions = ['call on arrival', 'text on arrival', 'no contact', 'all electric'];
@@ -33,7 +34,6 @@ const BookingFormDetails = ({ onSubmit }) => {
   useEffect(() => {
     let address = getParam('gt')
     if (address == null) return;
-    address = decodeJson(address);
     if (address.address) {
       setSelectedAddress(address)
     }
@@ -49,7 +49,7 @@ const BookingFormDetails = ({ onSubmit }) => {
     document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
   };
 
-  const handleFormSubmit = (data) => {
+  const handleFormSubmit = async (data) => {
     if (!selectedAddress.address) {
       const addressErr = document.getElementById("choose-address-message");
       addressErr.classList.remove("hidden");
@@ -66,19 +66,26 @@ const BookingFormDetails = ({ onSubmit }) => {
       document.getElementById("choose-date-message").classList.add('hidden');
     }
 
+    setIsSubmitting(true);
+
     const codes = accessCodes.map(code => ({
       label: document.getElementById(`label-${code.id}`).value,
       code: document.getElementById(`code-${code.id}`).value
     }));
     
-    onSubmit({
-      ...data,
-      codes,
-      selectedOptions,
-      selectedAddress,
-      selectedDate,
-      timeSlot
-    });
+    try {
+      await onSubmit({
+        ...data,
+        codes,
+        selectedOptions,
+        selectedAddress,
+        selectedDate,
+        timeSlot
+      });
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      setIsSubmitting(false);
+    }
   };
 
   const toggleOptions = (op) => {
@@ -121,8 +128,17 @@ const BookingFormDetails = ({ onSubmit }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, delay: 0.3 }}
-        className="max-w-2xl mx-auto"
+        className="max-w-2xl mx-auto relative"
       >
+        {isSubmitting && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-[#2EB966]" />
+              <p className="text-gray-700 font-medium">Processing your booking...</p>
+            </div>
+          </div>
+        )}
+
         <div className="shadow mt-5 self-center">
           <AddressAutofillBar initialAddress={selectedAddress} onSelect={handleChangeAddress} />
         </div>
@@ -150,11 +166,12 @@ const BookingFormDetails = ({ onSubmit }) => {
               id={`slot-${index}`}
               type="button"
               onClick={() => setTimeSlot(index)}
+              disabled={isSubmitting}
               className={`mr-5 mb-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                 timeSlot === index
                   ? "bg-[#2EB966] text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {slot}
             </button>
@@ -168,6 +185,7 @@ const BookingFormDetails = ({ onSubmit }) => {
               <input
                 type="checkbox"
                 className="mr-2 rounded text-[#2EB966] focus:ring-[#2EB966]"
+                disabled={isSubmitting}
                 {...register("hasPets")}
               />
               {"are there any pets? even if they're friendly it's important to know."}
@@ -185,6 +203,7 @@ const BookingFormDetails = ({ onSubmit }) => {
                   type="radio"
                   className="text-[#2EB966] focus:ring-[#2EB966]"
                   value="call"
+                  disabled={isSubmitting}
                   {...register("preferredContact", { required: true })}
                 />
                 <span className="ml-2">call</span>
@@ -194,6 +213,7 @@ const BookingFormDetails = ({ onSubmit }) => {
                   type="radio"
                   className="text-[#2EB966] focus:ring-[#2EB966]"
                   value="text"
+                  disabled={isSubmitting}
                   {...register("preferredContact", { required: true })}
                 />
                 <span className="ml-2">text</span>
@@ -216,6 +236,7 @@ const BookingFormDetails = ({ onSubmit }) => {
               placeholder="(123) 456-7890"
               autoComplete="off"
               inputMode="numeric"
+              disabled={isSubmitting}
               {...register("phoneNumber", { 
                 required: true, 
                 pattern: {
@@ -235,12 +256,13 @@ const BookingFormDetails = ({ onSubmit }) => {
               access codes (if any)
             </p>
             {accessCodes.map(({id}) => (
-              <AccessCode key={id} index={id} onDelete={removeAccessCode} />
+              <AccessCode key={id} index={id} onDelete={removeAccessCode} isSubmitting={isSubmitting} />
             ))}
             <button
               type="button"
               onClick={addAccessCode}
-              className="hover:cursor-pointer inline-flex items-center px-4 py-2 text-sm font-medium text-[#2EB966] hover:text-[#2EB966]/80"
+              disabled={isSubmitting}
+              className="hover:cursor-pointer inline-flex items-center px-4 py-2 text-sm font-medium text-[#2EB966] hover:text-[#2EB966]/80 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={20} className="mr-2" />
               add another access code
@@ -255,11 +277,12 @@ const BookingFormDetails = ({ onSubmit }) => {
                 id={`option-${index}`}
                 type="button"
                 onClick={() => toggleOptions(op)}
+                disabled={isSubmitting}
                 className={`hover:cursor-pointer mr-5 mb-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   selectedOptions.includes(op) 
                     ? "bg-[#2EB966] text-white" 
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {op}
               </button>
@@ -277,6 +300,7 @@ const BookingFormDetails = ({ onSubmit }) => {
               placeholder="example: make sure to get under the trampoline"
               maxLength={500}
               rows={4}
+              disabled={isSubmitting}
               {...register("message")}
             />
             <p className="text-sm text-gray-500">
@@ -287,9 +311,17 @@ const BookingFormDetails = ({ onSubmit }) => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full px-6 py-3 text-white bg-[#2EB966] rounded-md hover:bg-[#2EB966]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2EB966]"
+            disabled={isSubmitting}
+            className="w-full px-6 py-3 text-white bg-[#2EB966] rounded-md hover:bg-[#2EB966]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2EB966] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Book Now
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Book Now'
+            )}
           </button>
         </form>
       </motion.div>

@@ -16,7 +16,7 @@ const LandingPage = () => {
 
   return (
     <>
-      <div className="min-h-[70vh] flex flex-col">
+      <div className="min-h-[100vh] flex flex-col">
         {/* Hero Section */}
         <div
           className="flex-1 bg-cover bg-center"
@@ -25,7 +25,7 @@ const LandingPage = () => {
             backgroundBlendMode: "overlay",
           }}
         >
-          <div className="container mx-auto px-4 flex justify-center pt-20 pb-32">
+          <div className="container mx-auto px-4 flex justify-center pt-40 pb-32">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

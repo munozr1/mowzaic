@@ -5,7 +5,7 @@ import LandingPage from '../pages/LandingPage';
 import NewBookingPage from '../pages/NewBookingPage';
 import MainContent from '../pages/MainContent';
 import PageLayout from './NavBar';
-
+import Login from '../pages/Login';
 const Router = () => {
   const { path } = useContext(NavigationContext);
 
@@ -17,6 +17,8 @@ const Router = () => {
     switch (basePath) {
       case '/':
         return <LandingPage />;
+      case '/login':
+        return <Login />;
       case '/book':
         return <NewBookingPage />;
       default:

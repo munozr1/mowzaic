@@ -5,6 +5,7 @@ import ThankYouBooked from './ThankYouBooked';
 
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
+	const [error, setError] = useState(null);
 
 	const handleFormSubmit = async (formData) => {
 		try {
@@ -16,6 +17,8 @@ function NewBookingPage() {
 				body: JSON.stringify(formData)
 			});
 
+			console.log("response: ", response);
+
 			if (!response.ok) {
 				throw new Error('Booking failed');
 			}
@@ -23,7 +26,8 @@ function NewBookingPage() {
 			setBookingState('thank-you');
 		} catch (error) {
 			console.error('Error submitting booking:', error);
-			// Handle error appropriately (e.g., show error message to user)
+			setError('Failed to submit booking. Please try again.');
+			throw error; // Re-throw to let the form know the submission failed
 		}
 	};
 
@@ -31,16 +35,20 @@ function NewBookingPage() {
 		switch(bookingState) {
 			case 'fill-form':
 				return (
-					<div 
+					<motion.div 
 						id="booking-form-container"
-						/*initial={{ opacity: 0, y: 20 }}
+						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.6, delay: 0.5 }}
-						*/
 						className="w-[100vw] lg:w-[100%] overflow-hidden items-center px-2 place-items-enter self-center"
 					>
+						{error && (
+							<div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+								<p className="text-red-600">{error}</p>
+							</div>
+						)}
 						<BookingFormDetails onSubmit={handleFormSubmit} />
-					</div>
+					</motion.div>
 				);
 			case 'thank-you':
 				return <ThankYouBooked />;
