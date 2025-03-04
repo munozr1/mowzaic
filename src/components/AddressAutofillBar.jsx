@@ -8,6 +8,7 @@ const AddressAutofillBar = ({ onSelect, initialAddress }) => {
   const [userLocation, setUserLocation] = useState({});
 
   useEffect(() => {
+    console.log("initialAddress",{...initialAddress})
     if (initialAddress?.address) {
       setQuery(initialAddress.address + ' ' + initialAddress.city + ', ' + initialAddress.state+ ', ' + initialAddress.postal);
     }

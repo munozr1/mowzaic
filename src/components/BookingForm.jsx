@@ -34,6 +34,7 @@ const BookingFormDetails = ({ onSubmit }) => {
   useEffect(() => {
     let address = getParam('gt')
     if (address == null) return;
+    address = decodeJson(address)
     if (address.address) {
       setSelectedAddress(address)
     }
