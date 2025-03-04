@@ -20,3 +20,7 @@ export function getParam(param){
 	const params = new URLSearchParams(queryString);
 	return params.get(param)
 }
+
+export function fullAddress(address) {
+  return `${address.street}, ${address.city}, ${address.state} ${address.zip}`;
+}

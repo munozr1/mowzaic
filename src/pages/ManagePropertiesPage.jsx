@@ -1,58 +1,22 @@
-import  { useState } from "react";
 import { Trash2, X } from "lucide-react";
-
+import { useAuthentication } from "../AuthenticationContext";
+import { useEffect, useState } from "react";
 const ManagePropertiesPage = () => {
-  const [properties, setProperties] = useState([
-    {
-      id: "prop-1",
-      address: {
-        street: "123 Green Meadow Lane",
-        city: "Springfield",
-        state: "IL",
-        zipCode: "62704",
-      },
-      subscription: {
-        type: "Weekly Service",
-        status: "Active",
-        nextBilling: "May 15, 2023",
-      },
-    },
-    {
-      id: "prop-2",
-      address: {
-        street: "456 Oak Tree Drive",
-        city: "Riverdale",
-        state: "NY",
-        zipCode: "10471",
-      },
-      subscription: {
-        type: "Bi-Weekly Service",
-        status: "Active",
-        nextBilling: "May 22, 2023",
-      },
-    },
-  ]);
+  const {addresses} = useAuthentication();
+  const [properties, setProperties] = useState([]);
+  useEffect(()=>{
+    setProperties(addresses);
+  },[addresses]);
 
-  const handleRemoveProperty = (id ) => {
-    setProperties(properties.filter(property => property.id !== id));
+
+  const handleRemoveProperty = () => {
     alert({
       title: "Property Removed",
       description: "This property has been removed from your account.",
     });
   };
 
-  const handleCancelSubscription = (id ) => {
-    setProperties(properties.map(property => 
-      property.id === id 
-        ? {
-            ...property,
-            subscription: {
-              ...property.subscription,
-              status: "Canceled",
-            },
-          }
-        : property
-    ));
+  const handleCancelSubscription = () => {
     alert({
       title: "Subscription Canceled",
       description: "Your subscription has been canceled for this property.",
@@ -77,10 +41,10 @@ const ManagePropertiesPage = () => {
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-800">
-                    {property.address.street}
+                    {property.address}
                   </h2>
                   <p className="text-gray-600 mt-1">
-                    {property.address.city}, {property.address.state} {property.address.zipCode}
+                    {property.city}, {property.state} {property.zipCode}
                   </p>
                 </div>
                 <button 
@@ -96,34 +60,30 @@ const ManagePropertiesPage = () => {
                   <div>
                     <span className="text-sm text-gray-500">Subscription:</span>
                     <span className="ml-2 text-sm font-medium">
-                      {property.subscription.type}
+                      {"weekly"}
                     </span>
                   </div>
                   <div className="flex items-center">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      property.subscription.status === "Active" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-red-100 text-red-800"
+                      "bg-green-100 text-green-800" 
                     }`}>
-                      {property.subscription.status}
+                      {"active"}
                     </span>
                   </div>
                 </div>
                 
-                {property.subscription.status === "Active" && (
                   <div className="mt-4 flex justify-between items-center">
                     <span className="text-sm text-gray-500">
-                      Next billing: {property.subscription.nextBilling}
+                      Next billing: {new Date().toLocaleDateString()}
                     </span>
                     <button 
                       onClick={() => handleCancelSubscription(property.id)}
-                      className="inline-flex items-center text-sm text-red-500 hover:text-red-700"
-                    >
-                      <X size={16} className="mr-1" />
-                      Cancel Subscription
-                    </button>
-                  </div>
-                )}
+                    className="inline-flex items-center text-sm text-red-500 hover:text-red-700"
+                  >
+                    <X size={16} className="mr-1" />
+                    Cancel Subscription
+                  </button>
+                </div>
               </div>
             </div>
           ))}

@@ -4,6 +4,7 @@ import { useAuthentication } from '../AuthenticationContext';
 import { useNavigation } from '../NavigationContext';
 import BookingFormDetails from '../components/BookingForm';
 import ThankYouBooked from './ThankYouBooked';
+import { fullAddress } from '../utils';
 
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
@@ -29,7 +30,7 @@ function NewBookingPage() {
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${token}`
 				},
-				body: JSON.stringify({...formData, userId: user.id})
+				body: JSON.stringify({...formData, userId: user.id, fullAddress: fullAddress(formData.address)})
 			});
 
 			console.log("response: ", response);

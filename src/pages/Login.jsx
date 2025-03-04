@@ -23,7 +23,6 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(formData.email, formData.password);
-      console.log("Login successful");
       const returnTo = getParam('returnTo');
       if (returnTo) {
         navigate(returnTo);

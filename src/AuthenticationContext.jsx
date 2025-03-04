@@ -7,6 +7,7 @@ export const AuthenticationProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [addresses, setAddresses] = useState([]);
 
   useEffect(() => {
     if (token) {
@@ -14,6 +15,19 @@ export const AuthenticationProvider = ({ children }) => {
       const user = jwtDecode(token);
       console.log(user);
       setUser(user);
+      const fetchAddresses = async ()=>{
+        const res = await fetch("http://localhost:3000/properties", {
+          method: "POST",
+          credentials: 'include',
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({userId: user.id})
+        });
+        setAddresses(await res.json());
+      }
+      fetchAddresses();
     } else {
       setIsAuthenticated(false);
     }
@@ -52,7 +66,7 @@ export const AuthenticationProvider = ({ children }) => {
 
   
   return (
-    <AuthenticationContext.Provider value={{user, token, login, logout, isAuthenticated}}>
+    <AuthenticationContext.Provider value={{user, token, login, logout, isAuthenticated, addresses}}>
       {children}
     </AuthenticationContext.Provider>
   );
