@@ -1,20 +1,35 @@
 import { useState } from 'react'
 import { motion } from "motion/react";
+import { useAuthentication } from '../AuthenticationContext';
+import { useNavigation } from '../NavigationContext';
 import BookingFormDetails from '../components/BookingForm';
 import ThankYouBooked from './ThankYouBooked';
 
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
 	const [error, setError] = useState(null);
+	const { isAuthenticated, token, user } = useAuthentication();
+	const { navigate } = useNavigation();
 
 	const handleFormSubmit = async (formData) => {
+		if (!isAuthenticated) {
+			// Save form data to localStorage
+			localStorage.setItem('pendingBookingData', JSON.stringify(formData));
+			// Navigate to login
+			navigate('/login', { returnTo: '/book' });
+			return;
+		}
+		console.log(formData);
+
 		try {
 			const response = await fetch('http://localhost:3000/book', {
 				method: 'POST',
+				credentials: 'include',
 				headers: {
-					'Content-Type': 'application/json'
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${token}`
 				},
-				body: JSON.stringify(formData)
+				body: JSON.stringify({...formData, userId: user.id})
 			});
 
 			console.log("response: ", response);
@@ -24,10 +39,12 @@ function NewBookingPage() {
 			}
 
 			setBookingState('thank-you');
+			// Clear saved form data after successful booking
+			localStorage.removeItem('pendingBookingData');
 		} catch (error) {
 			console.error('Error submitting booking:', error);
 			setError('Failed to submit booking. Please try again.');
-			throw error; // Re-throw to let the form know the submission failed
+			throw error;
 		}
 	};
 

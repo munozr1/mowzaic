@@ -1,11 +1,14 @@
 import { NavigationProvider } from './NavigationContext.jsx'
+import { AuthenticationProvider } from './AuthenticationContext.jsx'
 import Router from './components/Router'
 
 function App() {
 	return (
-		<NavigationProvider>
-			<Router />
-		</NavigationProvider>
+		<AuthenticationProvider>
+			<NavigationProvider>
+				<Router />
+			</NavigationProvider>
+		</AuthenticationProvider>
 	)
 }
 

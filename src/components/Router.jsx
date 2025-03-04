@@ -1,13 +1,16 @@
 import { useContext } from 'react';
 import PropTypes from 'prop-types';
 import { NavigationContext } from '../NavigationContext';
+import { useAuthentication } from '../AuthenticationContext';
 import LandingPage from '../pages/LandingPage';
 import NewBookingPage from '../pages/NewBookingPage';
 import MainContent from '../pages/MainContent';
 import PageLayout from './NavBar';
 import Login from '../pages/Login';
+
 const Router = () => {
   const { path } = useContext(NavigationContext);
+  const { isAuthenticated } = useAuthentication();
 
   // Remove query parameters from path for matching
   const basePath = path.split('?')[0];
@@ -26,8 +29,8 @@ const Router = () => {
     }
   };
 
-  // If it's the landing page, render without layout
-  if (basePath === '/') {
+  // If it's the landing page or login page and not authenticated, render without layout
+  if ((basePath === '/' || basePath === '/login') && !isAuthenticated) {
     return renderContent();
   }
 

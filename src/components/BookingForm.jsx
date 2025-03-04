@@ -27,18 +27,38 @@ const BookingFormDetails = ({ onSubmit }) => {
   const [availability] = useState(gen14days());
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { handleSubmit, register, watch, formState: { errors } } = useForm();
+  const { handleSubmit, register, watch, formState: { errors }, setValue } = useForm();
   const additionalOptions = ['call on arrival', 'text on arrival', 'no contact', 'all electric'];
   const timeSlots = ['early (7am-9am)', 'mid (10am-12pm)', 'late (1pm-4pm)', 'anytime'];
 
   useEffect(() => {
-    let address = getParam('gt')
-    if (address == null) return;
-    address = decodeJson(address)
-    if (address.address) {
-      setSelectedAddress(address)
+    // Try to load saved form data
+    const savedData = localStorage.getItem('pendingBookingData');
+    if (savedData) {
+      const data = JSON.parse(savedData);
+      // Restore form data
+      if (data.selectedAddress) setSelectedAddress(data.selectedAddress);
+      if (data.selectedDate) setSelectedDate(data.selectedDate);
+      if (data.timeSlot !== undefined) setTimeSlot(data.timeSlot);
+      if (data.selectedOptions) setSelectedOptions(data.selectedOptions);
+      if (data.codes) setAccessCodes(data.codes.map((code, index) => ({ ...code, id: index + 1 })));
+      
+      // Restore form values
+      if (data.phoneNumber) setValue('phoneNumber', data.phoneNumber);
+      if (data.preferredContact) setValue('preferredContact', data.preferredContact);
+      if (data.hasPets !== undefined) setValue('hasPets', data.hasPets);
+      if (data.message) setValue('message', data.message);
+    } else {
+      // Load address from URL parameter if no saved data
+      let address = getParam('gt')
+      if (address) {
+        address = decodeJson(address)
+        if (address.address) {
+          setSelectedAddress(address)
+        }
+      }
     }
-  }, [])
+  }, [setValue]);
 
   const handleChangeAddress = (data) => {
     setSelectedAddress(data);

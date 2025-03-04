@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useNavigation } from '../NavigationContext';
+import { useAuthentication } from '../AuthenticationContext';
+import { getParam } from '../utils';
+
 const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
@@ -7,6 +10,7 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const {navigate} = useNavigation();
+  const {login} = useAuthentication();
 
   const handleChange = (e) => {
     setFormData({
@@ -18,31 +22,26 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:3000/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+      await login(formData.email, formData.password);
+      console.log("Login successful");
+      const returnTo = getParam('returnTo');
+      if (returnTo) {
+        navigate(returnTo);
+      } else {
+        const gt = getParam('gt');
+        if (gt) {
+          navigate('/book', {gt});
+        } else {
+          navigate('/');
+        }
       }
-
-      // Store the token in localStorage
-      localStorage.setItem('token', data.token);
-      // Redirect to dashboard or home page
-      navigate('/');
     } catch (err) {
       setError(err.message || 'An error occurred during login');
     }
   };
 
   return (
-    <div className=" mt-40 flex itemscenter justify-center bg-gray-50">
+    <div className="mt-40 flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

@@ -1,15 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { Menu, X, Home, UserCircle, Newspaper } from "lucide-react";
 import { useNavigation } from "../NavigationContext";
+import { useAuthentication } from "../AuthenticationContext";
 import PropTypes from "prop-types";
 
 
 const PageLayout = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-
+  const {isAuthenticated, logout} = useAuthentication();
   const {path, navigate} = useNavigation()
+
   // Check if mobile on mount and when window resizes
   useEffect(() => {
     const checkIfMobile = () => {
@@ -29,11 +30,16 @@ const PageLayout = ({ children }) => {
     };
   }, []);
 
+
   const navigationItems = [
     { icon: Newspaper, name: "New Booking", path: "/book" },
     { icon: Home, name: "Manage Properites", path: "/manage" },
     { icon: UserCircle, name: "Account", path: "/" },
   ];
+
+  if (!isAuthenticated) {
+    return <div className="min-h-screen bg-gray-50">{children}</div>;
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -94,9 +100,16 @@ const PageLayout = ({ children }) => {
           </div>
           
           <div className="px-4">
-            <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
+            {
+              !isAuthenticated ?
+              <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
               login
             </button>
+            :
+            <button onClick={logout} className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
+              logout
+            </button>
+            }
           </div>
         </header>
 
