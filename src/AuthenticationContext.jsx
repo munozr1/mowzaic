@@ -5,12 +5,17 @@ export const AuthenticationContext = createContext();
 
 export const AuthenticationProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(() => {
+    // Initialize token from localStorage if available
+    return localStorage.getItem('token') || null;
+  });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [addresses, setAddresses] = useState([]);
 
   useEffect(() => {
     if (token) {
+      // Store token in localStorage whenever it changes
+      localStorage.setItem('token', token);
       setIsAuthenticated(true);
       const user = jwtDecode(token);
       console.log(user);
@@ -29,6 +34,7 @@ export const AuthenticationProvider = ({ children }) => {
       }
       fetchAddresses();
     } else {
+      localStorage.removeItem('token');
       setIsAuthenticated(false);
     }
   }, [token]);
@@ -61,6 +67,9 @@ export const AuthenticationProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
+    // Clear token from localStorage on logout
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     window.location.href = '/';
   }
 

@@ -2,18 +2,31 @@ import { Trash2, X } from "lucide-react";
 import { useAuthentication } from "../AuthenticationContext";
 import { useEffect, useState } from "react";
 const ManagePropertiesPage = () => {
-  const {addresses} = useAuthentication();
+  const {addresses, token} = useAuthentication();
   const [properties, setProperties] = useState([]);
   useEffect(()=>{
+    console.log("addresses: ", addresses);
     setProperties(addresses);
   },[addresses]);
 
 
-  const handleRemoveProperty = () => {
-    alert({
-      title: "Property Removed",
-      description: "This property has been removed from your account.",
-    });
+  const handleRemoveProperty = async (propertyId) => {
+    try {
+      const response = await fetch(`http://localhost:3000/properties/${propertyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to remove property');
+      }
+      
+      setProperties(properties.filter((property) => property.id !== propertyId));
+    } catch (error) {
+      console.error('Error removing property:', error);
+    }
   };
 
   const handleCancelSubscription = () => {

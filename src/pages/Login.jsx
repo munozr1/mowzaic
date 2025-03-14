@@ -23,16 +23,11 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(formData.email, formData.password);
-      const returnTo = getParam('returnTo');
-      if (returnTo) {
-        navigate(returnTo);
+      const gt = getParam('gt');
+      if (gt) {
+        navigate('/book', {gt});
       } else {
-        const gt = getParam('gt');
-        if (gt) {
-          navigate('/book', {gt});
-        } else {
-          navigate('/');
-        }
+        navigate('/');
       }
     } catch (err) {
       setError(err.message || 'An error occurred during login');
@@ -95,6 +90,15 @@ const Login = () => {
             </button>
           </div>
         </form>
+        <div className="text-center">
+          <span className="text-sm text-gray-600">{"Don't have an account? "}</span>
+          <button 
+            onClick={() => navigate('/register', { returnTo: getParam('returnTo') })}
+            className="text-sm font-medium text-[#2EB966] hover:text-[#2EB966]/80"
+          >
+            Create one
+          </button>
+        </div>
       </div>
     </div>
   );

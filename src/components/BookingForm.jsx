@@ -33,31 +33,33 @@ const BookingFormDetails = ({ onSubmit }) => {
 
   useEffect(() => {
     // Try to load saved form data
-    const savedData = localStorage.getItem('pendingBookingData');
+    const gt = getParam('gt');
+    const savedData = gt ? decodeJson(gt) : null;
     if (savedData) {
-      const data = JSON.parse(savedData);
+      console.log("data: ", savedData);
       // Restore form data
-      if (data.selectedAddress) setSelectedAddress(data.selectedAddress);
-      if (data.selectedDate) setSelectedDate(data.selectedDate);
-      if (data.timeSlot !== undefined) setTimeSlot(data.timeSlot);
-      if (data.selectedOptions) setSelectedOptions(data.selectedOptions);
-      if (data.codes) setAccessCodes(data.codes.map((code, index) => ({ ...code, id: index + 1 })));
+      if (savedData.selectedAddress) setSelectedAddress(savedData.selectedAddress);
+      if (savedData.selectedDate) setSelectedDate(savedData.selectedDate);
+      if (savedData.timeSlot !== undefined) setTimeSlot(savedData.timeSlot);
+      if (savedData.selectedOptions) setSelectedOptions(savedData.selectedOptions);
+      
+      // Handle access codes properly
+      if (savedData.codes && savedData.codes.length > 0) {
+        const formattedCodes = savedData.codes.map((code, index) => ({
+          id: index + 1,
+          label: code.label || "",
+          code: code.code || ""
+        }));
+        setAccessCodes(formattedCodes);
+        console.log("Setting access codes:", formattedCodes);
+      }
       
       // Restore form values
-      if (data.phoneNumber) setValue('phoneNumber', data.phoneNumber);
-      if (data.preferredContact) setValue('preferredContact', data.preferredContact);
-      if (data.hasPets !== undefined) setValue('hasPets', data.hasPets);
-      if (data.message) setValue('message', data.message);
-    } else {
-      // Load address from URL parameter if no saved data
-      let address = getParam('gt')
-      if (address) {
-        address = decodeJson(address)
-        if (address.address) {
-          setSelectedAddress(address)
-        }
-      }
-    }
+      if (savedData.phoneNumber) setValue('phoneNumber', savedData.phoneNumber);
+      if (savedData.preferredContact) setValue('preferredContact', savedData.preferredContact);
+      if (savedData.hasPets !== undefined) setValue('hasPets', savedData.hasPets);
+      if (savedData.message) setValue('message', savedData.message);
+    } 
   }, [setValue]);
 
   const handleChangeAddress = (data) => {
@@ -68,6 +70,14 @@ const BookingFormDetails = ({ onSubmit }) => {
     setSelectedDate(data);
     const id = `day-${data.id}`;
     document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  };
+
+  const handleAccessCodeChange = (id, field, value) => {
+    setAccessCodes(prevCodes => 
+      prevCodes.map(code => 
+        code.id === id ? { ...code, [field]: value } : code
+      )
+    );
   };
 
   const handleFormSubmit = async (data) => {
@@ -89,15 +99,10 @@ const BookingFormDetails = ({ onSubmit }) => {
 
     setIsSubmitting(true);
 
-    const codes = accessCodes.map(code => ({
-      label: document.getElementById(`label-${code.id}`).value,
-      code: document.getElementById(`code-${code.id}`).value
-    }));
-    
     try {
       await onSubmit({
         ...data,
-        codes,
+        codes: accessCodes,
         selectedOptions,
         selectedAddress,
         selectedDate,
@@ -276,8 +281,16 @@ const BookingFormDetails = ({ onSubmit }) => {
             <p className="block text-sm font-medium text-gray-700">
               access codes (if any)
             </p>
-            {accessCodes.map(({id}) => (
-              <AccessCode key={id} index={id} onDelete={removeAccessCode} isSubmitting={isSubmitting} />
+            {accessCodes.map((code) => (
+              <AccessCode 
+                key={code.id} 
+                index={code.id} 
+                initialLabel={code.label}
+                initialCode={code.code}
+                onChange={handleAccessCodeChange}
+                onDelete={removeAccessCode} 
+                isSubmitting={isSubmitting} 
+              />
             ))}
             <button
               type="button"

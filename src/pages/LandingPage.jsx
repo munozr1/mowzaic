@@ -4,12 +4,12 @@ import { motion } from "motion/react";
 import AddressAutofillBar from "../components/AddressAutofillBar";
 import { encodeJson } from "../utils";
 import { useNavigation } from "../NavigationContext";
-
+import PromotionCard from "../components/PromotionCard";
 const LandingPage = () => {
   const { navigate } =  useNavigation();
   const handleSubmit = (place) => {
     // Handle address submission here - typically would redirect to main app
-    const encodedData = encodeJson(place)
+    const encodedData = encodeJson({selectedAddress: place})
     localStorage.setItem('hasVisited', 'true')
     navigate('/book', {gt: encodedData})
   };
@@ -30,7 +30,7 @@ const LandingPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="max-w-xl"
+              className="max-w-xl  "
             >
               <h1 className="text-5xl font-bold text-white mb-6">
                 {"mow delivered, just like that."}
@@ -70,6 +70,9 @@ const LandingPage = () => {
                 <a href="/" className="text-white hover:underline text-sm">
                   or sign in to book service
                 </a>
+              </div>
+              <div className="shadow-md mt-6 flex justify-center">
+              <PromotionCard />
               </div>
             </motion.div>
           </div>

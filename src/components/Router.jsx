@@ -7,7 +7,7 @@ import NewBookingPage from '../pages/NewBookingPage';
 import MainContent from '../pages/MainContent';
 import PageLayout from './NavBar';
 import Login from '../pages/Login';
-
+import Register from '../pages/Register';
 const Router = () => {
   const { path } = useContext(NavigationContext);
   const { isAuthenticated } = useAuthentication();
@@ -24,6 +24,8 @@ const Router = () => {
         return <Login />;
       case '/book':
         return <NewBookingPage />;
+      case '/register':
+        return <Register />;
       default:
         return <MainContent />;
     }

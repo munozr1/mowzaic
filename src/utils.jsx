@@ -22,5 +22,11 @@ export function getParam(param){
 }
 
 export function fullAddress(address) {
-  return `${address.street}, ${address.city}, ${address.state} ${address.zip}`;
+  return `${address.address}, ${address.city}, ${address.state} ${address.zip}`;
+}
+
+export function findAddress(addresses, address) {
+  //return -1 if not found, else return address.propertyId
+  const index = addresses.findIndex(a => fullAddress(a) === fullAddress(address));
+  return index === -1 ? -1 : addresses[index].propertyId || -1;
 }

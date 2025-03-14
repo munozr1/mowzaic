@@ -1,36 +1,51 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from "motion/react";
 import { useAuthentication } from '../AuthenticationContext';
 import { useNavigation } from '../NavigationContext';
 import BookingFormDetails from '../components/BookingForm';
 import ThankYouBooked from './ThankYouBooked';
-import { fullAddress } from '../utils';
-
+import { fullAddress, encodeJson, getParam } from '../utils';
+import CheckoutForm from '../components/CheckoutForm';
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
 	const [error, setError] = useState(null);
+	const [bookingData, setBookingData] = useState(null);
 	const { isAuthenticated, token, user } = useAuthentication();
 	const { navigate } = useNavigation();
 
+	useEffect(() => {
+		const booking = getParam('booking');
+		if (booking) {
+			setBookingState('booking-status');
+		}
+	}, []);
+
 	const handleFormSubmit = async (formData) => {
 		if (!isAuthenticated) {
-			// Save form data to localStorage
-			localStorage.setItem('pendingBookingData', JSON.stringify(formData));
-			// Navigate to login
-			navigate('/login', { returnTo: '/book' });
+			console.log("formData: ", formData);
+			
+			// Ensure codes are properly formatted before encoding
+			const formDataWithCleanCodes = {
+				...formData,
+				codes: formData.codes.map(code => ({
+					label: code.label || "",
+					code: code.code || ""
+				}))
+			};
+			
+			const encodedData = encodeJson(formDataWithCleanCodes);
+			navigate('/login', { gt: encodedData });
 			return;
 		}
-		console.log(formData);
 
 		try {
 			const response = await fetch('http://localhost:3000/book', {
 				method: 'POST',
-				credentials: 'include',
 				headers: {
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${token}`
 				},
-				body: JSON.stringify({...formData, userId: user.id, fullAddress: fullAddress(formData.address)})
+				body: JSON.stringify({...formData, userId: user.id, fullAddress: fullAddress(formData.selectedAddress)})
 			});
 
 			console.log("response: ", response);
@@ -39,14 +54,27 @@ function NewBookingPage() {
 				throw new Error('Booking failed');
 			}
 
-			setBookingState('thank-you');
-			// Clear saved form data after successful booking
-			localStorage.removeItem('pendingBookingData');
+			const bookingResult = await response.json();
+			setBookingData(bookingResult);
+
+			localStorage.setItem('bookingData', JSON.stringify(bookingResult));
+			console.log("bookingData: ", bookingResult);
+			
+			// Move to checkout state instead of thank-you
+			setBookingState('checkout');
+			
 		} catch (error) {
 			console.error('Error submitting booking:', error);
 			setError('Failed to submit booking. Please try again.');
 			throw error;
 		}
+	};
+
+	const handlePaymentSuccess = () => {
+		// Clear saved form data after successful payment
+		localStorage.removeItem('pendingBookingData');
+		// Move to thank you state
+		setBookingState('thank-you');
 	};
 
 	const renderBookingState = () => {
@@ -68,6 +96,21 @@ function NewBookingPage() {
 						<BookingFormDetails onSubmit={handleFormSubmit} />
 					</motion.div>
 				);
+			case 'checkout':
+				return (
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.6 }}
+						className="w-[100vw] lg:w-[100%] overflow-hidden items-center px-2 place-items-enter self-center"
+					>
+						<CheckoutForm 
+							onPaymentSuccess={handlePaymentSuccess} 
+						/>
+					</motion.div>
+				);
+			case 'booking-status':
+				return <div>Booking Status</div>;
 			case 'thank-you':
 				return <ThankYouBooked />;
 			default:
