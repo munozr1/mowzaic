@@ -16,7 +16,7 @@ const LandingPage = () => {
 
   return (
     <>
-      <div className="bg-[url('../public/lawnbg.jpg')] bg-cover  min-h-[100vh] flex flex-col">
+      <div className="bg-[url('../lawnbg.jpg')] bg-cover  min-h-[100vh] flex flex-col">
         {/* Hero Section */}
         <div
           className="flex-1 bg-cover bg-center"

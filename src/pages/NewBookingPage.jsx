@@ -6,17 +6,20 @@ import BookingFormDetails from '../components/BookingForm';
 import ThankYouBooked from './ThankYouBooked';
 import { fullAddress, encodeJson, getParam } from '../utils';
 import CheckoutForm from '../components/CheckoutForm';
+import BookingStatus from '../components/BookingStatus';
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
 	const [error, setError] = useState(null);
 	const [bookingData, setBookingData] = useState(null);
 	const { isAuthenticated, token, user } = useAuthentication();
 	const { navigate } = useNavigation();
+	const [bookingId, setBookingId] = useState(null);
 
 	useEffect(() => {
 		const booking = getParam('booking');
 		if (booking) {
 			setBookingState('booking-status');
+			setBookingId(booking);
 		}
 	}, []);
 
@@ -110,7 +113,7 @@ function NewBookingPage() {
 					</motion.div>
 				);
 			case 'booking-status':
-				return <div>Booking Status</div>;
+				return <BookingStatus bookingId={bookingId} />;
 			case 'thank-you':
 				return <ThankYouBooked />;
 			default:
