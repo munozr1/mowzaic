@@ -60,7 +60,6 @@ const BookingFormDetails = ({ onSubmit }) => {
 
     fetchAvailability();
 
-    console.log("user: ", user);
     if (user) {
       setValue('phoneNumber', user.phone);
     }
