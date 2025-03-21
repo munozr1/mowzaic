@@ -8,6 +8,8 @@ import AddressAutofillBar from "./AddressAutofillBar";
 import DayCard from "./DayCard";
 import { decodeJson, getParam } from "../utils";
 import { BACKEND_URL } from "../constants";
+import { useAuthentication } from "../AuthenticationContext";
+
 function gen14days() {
   const today = new Date();  
   const availability = Array.from({ length: 14 }, (_, i) => {  
@@ -29,6 +31,7 @@ const BookingFormDetails = ({ onSubmit }) => {
   const { handleSubmit, register, watch, formState: { errors }, setValue } = useForm();
   const additionalOptions = ['call on arrival', 'text on arrival', 'no contact', 'all electric'];
   const timeSlots = ['early (7am-9am)', 'mid (10am-12pm)', 'late (1pm-4pm)', 'anytime'];
+  const { user } = useAuthentication();
 
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -56,6 +59,11 @@ const BookingFormDetails = ({ onSubmit }) => {
     }
 
     fetchAvailability();
+
+    console.log("user: ", user);
+    if (user) {
+      setValue('phoneNumber', user.phone);
+    }
   }, []);
   useEffect(() => {
     // Try to load saved form data
