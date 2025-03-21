@@ -6,6 +6,7 @@ import { jwtDecode } from "jwt-decode";
 const AuthenticationContext = createContext(null);
 
 // Separate hook for using the context
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuthentication = () => {
   const context = useContext(AuthenticationContext);
   if (!context) {
@@ -25,16 +26,42 @@ export const AuthenticationProvider = ({ children }) => {
   const [addresses, setAddresses] = useState([]);
   const apiUrl = import.meta.env.VITE_API_URL;
 
-  const ping = async () => {
+  const refreshAccessToken = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/refresh`, {
+        method: 'POST',
+        credentials: 'include', // Important: needed to send cookies
+      });
+      
+      if (!response.ok) throw new Error('Refresh failed');
+      
+      const data = await response.json();
+      setToken(data.accessToken);
+      return data.accessToken;
+    } catch (error) {
+      logout();
+      throw error;
+    }
+  };
+
+  const ping = async (jwtToken) => {
     try {
       const res = await fetch(`${apiUrl}/ping`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }
+          "Authorization": `Bearer ${jwtToken}`
+        },
+        credentials: 'include'
       });
-      // Only try to parse JSON if response is ok
+
+      if (res.status === 401) {
+        // Token expired, try to refresh
+        const newToken = await refreshAccessToken();
+        // Retry the ping with new token
+        return ping(newToken);
+      }
+
       if (res.ok) {
         return await res.json();
       }
@@ -55,7 +82,7 @@ export const AuthenticationProvider = ({ children }) => {
 
       try {
         setToken(stored_token);
-        const response = await ping();
+        const response = await ping(stored_token);
         
         if (response.ok !== false) {
           setIsAuthenticated(true);
@@ -75,6 +102,7 @@ export const AuthenticationProvider = ({ children }) => {
     };
 
     checkAuthentication();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
           
           
@@ -142,7 +170,15 @@ export const AuthenticationProvider = ({ children }) => {
 
   
   return (
-    <AuthenticationContext.Provider value={{user, token, login, logout, isAuthenticated, addresses}}>
+    <AuthenticationContext.Provider value={{
+      user, 
+      token, 
+      login, 
+      logout, 
+      isAuthenticated, 
+      addresses,
+      refreshAccessToken
+    }}>
       {children}
     </AuthenticationContext.Provider>
   );
