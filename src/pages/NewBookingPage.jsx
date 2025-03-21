@@ -7,6 +7,8 @@ import ThankYouBooked from './ThankYouBooked';
 import { fullAddress, encodeJson, getParam } from '../utils';
 import CheckoutForm from '../components/CheckoutForm';
 import BookingStatus from '../components/BookingStatus';
+import { BACKEND_URL } from '../constants';
+
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
 	const [error, setError] = useState(null);
@@ -39,9 +41,8 @@ function NewBookingPage() {
 			navigate('/login', { gt: encodedData });
 			return;
 		}
-		const apiUrl = import.meta.env.VITE_API_URL;
 		try {
-			const response = await fetch(`${apiUrl}/book`, {
+			const response = await fetch(`${BACKEND_URL}/book`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
