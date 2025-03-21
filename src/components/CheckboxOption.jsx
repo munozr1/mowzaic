@@ -1,4 +1,4 @@
-import PropTypes , { number } from 'prop-types';
+import PropTypes from 'prop-types';
 
 function CheckboxOption({name, id, onChange}) {
 

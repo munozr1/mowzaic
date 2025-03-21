@@ -1,19 +1,20 @@
 import { Trash2, X } from "lucide-react";
 import { useAuthentication } from "../AuthenticationContext";
 import { useEffect, useState } from "react";
+import { BACKEND_URL } from "../constants";
+import { useNavigation } from "../NavigationContext";
 const ManagePropertiesPage = () => {
   const {addresses, token} = useAuthentication();
   const [properties, setProperties] = useState([]);
+  const {navigate} = useNavigation();
   useEffect(()=>{
-    console.log("addresses: ", addresses);
     setProperties(addresses);
   },[addresses]);
 
 
   const handleRemoveProperty = async (propertyId) => {
-    const apiUrl = import.meta.env.VITE_API_URL;
     try {
-      const response = await fetch(`${apiUrl}/properties/${propertyId}`, {
+      const response = await fetch(`${BACKEND_URL}/properties/${propertyId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +45,9 @@ const ManagePropertiesPage = () => {
       {properties.length === 0 ? (
         <div className="bg-white rounded-md shadow-sm p-8 text-center">
           <p className="text-gray-600">{`You don't have any properties yet.`}</p>
-          <button className="mt-4 bg-[#2EB966] text-white px-4 py-2 rounded-md hover:bg-[#25A057] transition">
+          <button 
+          onClick={() => navigate('/book')}
+          className="mt-4 bg-[#2EB966] text-white px-4 py-2 rounded-md hover:bg-[#25A057] transition">
             Add Property
           </button>
         </div>

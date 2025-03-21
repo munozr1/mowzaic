@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, useStripe } from "@stripe/react-stripe-js";
 import { useAuthentication } from "../AuthenticationContext";
-
+import { BACKEND_URL } from "../constants";
 // Replace with your Stripe publishable key
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
@@ -16,12 +16,10 @@ const CheckoutFormContent = ({ onPaymentSuccess }) => {
 
   useEffect(() => {
     const bookingData = JSON.parse(localStorage.getItem('bookingData'));
-    console.log("bookingData: ", bookingData);
     const createCheckoutSession = async () => {
-    const apiUrl = import.meta.env.VITE_API_URL;
       try {
         const response = await fetch(
-          `${apiUrl}/create-checkout-session`,
+          `${BACKEND_URL}/create-checkout-session`,
           {
             method: "POST",
             headers: {

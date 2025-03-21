@@ -25,7 +25,6 @@ function NewBookingPage() {
 
 	const handleFormSubmit = async (formData) => {
 		if (!isAuthenticated) {
-			console.log("formData: ", formData);
 			
 			// Ensure codes are properly formatted before encoding
 			const formDataWithCleanCodes = {
@@ -51,7 +50,6 @@ function NewBookingPage() {
 				body: JSON.stringify({...formData, userId: user.id, fullAddress: fullAddress(formData.selectedAddress)})
 			});
 
-			console.log("response: ", response);
 
 			if (!response.ok) {
 				throw new Error('Booking failed');

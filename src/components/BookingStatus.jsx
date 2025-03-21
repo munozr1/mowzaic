@@ -3,15 +3,14 @@ import { useAuthentication } from '../AuthenticationContext';
 import PropTypes from 'prop-types';
 import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
-
+import { BACKEND_URL } from '../constants';
 function BookingStatus({bookingId, updateBookingState}) {
   const { token } = useAuthentication();
   const [status, setStatus] = useState(null);
-  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchStatus = async () => {
-      const res = await fetch(`${apiUrl}/book/${bookingId}`, {
+      const res = await fetch(`${BACKEND_URL}/book/${bookingId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -7,6 +7,7 @@ import AccessCode from "./AcessCode";
 import AddressAutofillBar from "./AddressAutofillBar";
 import DayCard from "./DayCard";
 import { decodeJson, getParam } from "../utils";
+import { BACKEND_URL } from "../constants";
 function gen14days() {
   const today = new Date();  
   const availability = Array.from({ length: 14 }, (_, i) => {  
@@ -23,19 +24,44 @@ const BookingFormDetails = ({ onSubmit }) => {
   const [selectedAddress, setSelectedAddress] = useState({});
   const [selectedDate, setSelectedDate] = useState({});
   const [timeSlot, setTimeSlot] = useState(3);
-  const [availability] = useState(gen14days());
+  const [availability, setAvailability] = useState(gen14days());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { handleSubmit, register, watch, formState: { errors }, setValue } = useForm();
   const additionalOptions = ['call on arrival', 'text on arrival', 'no contact', 'all electric'];
   const timeSlots = ['early (7am-9am)', 'mid (10am-12pm)', 'late (1pm-4pm)', 'anytime'];
 
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        console.log("Fetching availability from:", `${BACKEND_URL}/availability/this-week`);
+        const response = await fetch(`${BACKEND_URL}/book/availability/this-week`);
+        console.log("Response status:", response.status);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch availability: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log("Fetched availability data:", data);
+        if (!Array.isArray(data) || data.length === 0) {
+          console.log("No valid dates received, falling back to gen14days");
+          setAvailability(gen14days());
+        } else {
+          console.log("Setting availability with fetched dates");
+          setAvailability(data);
+        }
+      } catch (error) {
+        console.error('Error fetching availability:', error);
+        console.log("Falling back to gen14days due to error");
+        setAvailability(gen14days());
+      }
+    }
 
+    fetchAvailability();
+  }, []);
   useEffect(() => {
     // Try to load saved form data
     const gt = getParam('gt');
     const savedData = gt ? decodeJson(gt) : null;
     if (savedData) {
-      console.log("data: ", savedData);
       // Restore form data
       if (savedData.selectedAddress) setSelectedAddress(savedData.selectedAddress);
       if (savedData.selectedDate) setSelectedDate(savedData.selectedDate);
@@ -50,7 +76,6 @@ const BookingFormDetails = ({ onSubmit }) => {
           code: code.code || ""
         }));
         setAccessCodes(formattedCodes);
-        console.log("Setting access codes:", formattedCodes);
       }
       
       // Restore form values
@@ -59,6 +84,7 @@ const BookingFormDetails = ({ onSubmit }) => {
       if (savedData.hasPets !== undefined) setValue('hasPets', savedData.hasPets);
       if (savedData.message) setValue('message', savedData.message);
     } 
+
   }, [setValue]);
 
   const handleChangeAddress = (data) => {

@@ -8,6 +8,8 @@ import MainContent from '../pages/MainContent';
 import PageLayout from './NavBar';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
+import Account from '../pages/Account';
+
 const Router = () => {
   const { path } = useContext(NavigationContext);
   const { isAuthenticated } = useAuthentication();
@@ -26,6 +28,8 @@ const Router = () => {
         return <NewBookingPage />;
       case '/register':
         return <Register />;
+      case '/account':
+        return <Account />;
       default:
         return <MainContent />;
     }

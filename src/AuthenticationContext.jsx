@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { jwtDecode } from "jwt-decode";
-
+import { BACKEND_URL } from "./constants";
 // Create context outside of the provider component
 const AuthenticationContext = createContext(null);
 
@@ -24,11 +24,11 @@ export const AuthenticationProvider = ({ children }) => {
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [addresses, setAddresses] = useState([]);
-  const apiUrl = import.meta.env.VITE_API_URL;
+
 
   const refreshAccessToken = async () => {
     try {
-      const response = await fetch(`${apiUrl}/refresh`, {
+      const response = await fetch(`${BACKEND_URL}/refresh`, {
         method: 'POST',
         credentials: 'include', // Important: needed to send cookies
       });
@@ -46,7 +46,7 @@ export const AuthenticationProvider = ({ children }) => {
 
   const ping = async (jwtToken) => {
     try {
-      const res = await fetch(`${apiUrl}/ping`, {
+      const res = await fetch(`${BACKEND_URL}/ping`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -107,17 +107,14 @@ export const AuthenticationProvider = ({ children }) => {
           
           
   useEffect(() => {
-    const url = import.meta.env.VITE_API_URL;
     if (token) {
-      //console.log("token changed", token);
       // Store token in localStorage whenever it changes
       localStorage.setItem('token', token);
       setIsAuthenticated(true);
       const user = jwtDecode(token);
-      //console.log(user);
       setUser(user);
       const fetchAddresses = async ()=>{
-        const res = await fetch(`${url}/properties`, {
+        const res = await fetch(`${BACKEND_URL}/properties`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -143,8 +140,7 @@ export const AuthenticationProvider = ({ children }) => {
   }, [user]);
   
   const login = async (email, password) => {
-    //console.log(email, password);
-    let res = await fetch(`${apiUrl}/login`, {
+    let res = await fetch(`${BACKEND_URL}/login`, {
       method: "POST",
       body: JSON.stringify({ email, password }),
       headers: {

@@ -34,7 +34,7 @@ const PageLayout = ({ children }) => {
   const navigationItems = [
     { icon: Newspaper, name: "New Booking", path: "/book" },
     { icon: Home, name: "Manage Properites", path: "/manage" },
-    { icon: UserCircle, name: "Account", path: "/" },
+    { icon: UserCircle, name: "Account", path: "/account" },
   ];
 
   if (!isAuthenticated) {

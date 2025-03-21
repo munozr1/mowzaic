@@ -67,7 +67,7 @@ const LandingPage = () => {
               </div>
 
               <div className="mt-4">
-                <a href="/" className="text-white hover:underline text-sm">
+                <a href="/login" className="text-white hover:underline text-sm">
                   or sign in to book service
                 </a>
               </div>

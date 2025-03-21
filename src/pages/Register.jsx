@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { useNavigation } from '../NavigationContext';
 import { useAuthentication } from '../AuthenticationContext';
 import { getParam } from '../utils';
+import { BACKEND_URL } from '../constants';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
+    confirmEmail: '',
     password: '',
     confirmPassword: '',
     firstName: '',
@@ -13,6 +15,7 @@ const Register = () => {
     phone: ''
   });
   const [error, setError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const {navigate} = useNavigation();
   const {login} = useAuthentication();
 
@@ -21,18 +24,39 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    
+    // Clear email error when user types
+    if (e.target.name === 'email' || e.target.name === 'confirmEmail') {
+      setEmailError('');
+    }
+  };
+
+  const validateEmails = () => {
+    if (formData.email !== formData.confirmEmail) {
+      setEmailError('Email addresses do not match');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setEmailError('');
+
+    // Validate emails match
+    if (!validateEmails()) {
+      return;
+    }
+
+    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    const apiUrl = import.meta.env.VITE_API_URL;
     try {
-      const response = await fetch(`${apiUrl}/register`, {
+      const response = await fetch(`${BACKEND_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,11 +167,33 @@ const Register = () => {
                 name="email"
                 type="email"
                 required
-                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded relative block w-full px-3 py-2 border ${
+                  emailError ? 'border-red-500' : 'border-gray-300'
+                } placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm`}
                 placeholder="email address"
                 value={formData.email}
                 onChange={handleChange}
               />
+            </div>
+            <div>
+              <label htmlFor="confirmEmail" className="sr-only">
+                confirm email address
+              </label>
+              <input
+                id="confirmEmail"
+                name="confirmEmail"
+                type="email"
+                required
+                className={`appearance-none rounded relative block w-full px-3 py-2 border ${
+                  emailError ? 'border-red-500' : 'border-gray-300'
+                } placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm`}
+                placeholder="confirm email address"
+                value={formData.confirmEmail}
+                onChange={handleChange}
+              />
+              {emailError && (
+                <p className="mt-1 text-sm text-red-500">{emailError}</p>
+              )}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
