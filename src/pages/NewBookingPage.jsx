@@ -10,7 +10,7 @@ import BookingStatus from '../components/BookingStatus';
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
 	const [error, setError] = useState(null);
-	const [bookingData, setBookingData] = useState(null);
+	//const [, setBookingData] = useState(null);
 	const { isAuthenticated, token, user } = useAuthentication();
 	const { navigate } = useNavigation();
 	const [bookingId, setBookingId] = useState(null);
@@ -58,10 +58,8 @@ function NewBookingPage() {
 			}
 
 			const bookingResult = await response.json();
-			setBookingData(bookingResult);
 
 			localStorage.setItem('bookingData', JSON.stringify(bookingResult));
-			console.log("bookingData: ", bookingResult);
 			
 			// Move to checkout state instead of thank-you
 			setBookingState('checkout');
@@ -113,7 +111,7 @@ function NewBookingPage() {
 					</motion.div>
 				);
 			case 'booking-status':
-				return <BookingStatus bookingId={bookingId} />;
+				return <BookingStatus bookingId={bookingId} updateBookingState={setBookingState} />;
 			case 'thank-you':
 				return <ThankYouBooked />;
 			default:

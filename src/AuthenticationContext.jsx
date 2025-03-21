@@ -81,12 +81,12 @@ export const AuthenticationProvider = ({ children }) => {
   useEffect(() => {
     const url = import.meta.env.VITE_API_URL;
     if (token) {
-      console.log("token changed", token);
+      //console.log("token changed", token);
       // Store token in localStorage whenever it changes
       localStorage.setItem('token', token);
       setIsAuthenticated(true);
       const user = jwtDecode(token);
-      console.log(user);
+      //console.log(user);
       setUser(user);
       const fetchAddresses = async ()=>{
         const res = await fetch(`${url}/properties`, {
@@ -115,7 +115,7 @@ export const AuthenticationProvider = ({ children }) => {
   }, [user]);
   
   const login = async (email, password) => {
-    console.log(email, password);
+    //console.log(email, password);
     let res = await fetch(`${apiUrl}/login`, {
       method: "POST",
       body: JSON.stringify({ email, password }),

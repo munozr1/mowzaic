@@ -7,7 +7,6 @@ import AccessCode from "./AcessCode";
 import AddressAutofillBar from "./AddressAutofillBar";
 import DayCard from "./DayCard";
 import { decodeJson, getParam } from "../utils";
-
 function gen14days() {
   const today = new Date();  
   const availability = Array.from({ length: 14 }, (_, i) => {  
@@ -26,10 +25,10 @@ const BookingFormDetails = ({ onSubmit }) => {
   const [timeSlot, setTimeSlot] = useState(3);
   const [availability] = useState(gen14days());
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const { handleSubmit, register, watch, formState: { errors }, setValue } = useForm();
   const additionalOptions = ['call on arrival', 'text on arrival', 'no contact', 'all electric'];
   const timeSlots = ['early (7am-9am)', 'mid (10am-12pm)', 'late (1pm-4pm)', 'anytime'];
+
 
   useEffect(() => {
     // Try to load saved form data
