@@ -155,13 +155,22 @@ export const AuthenticationProvider = ({ children }) => {
     }
   }
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     setToken(null);
     // Clear token from localStorage on logout
+    await fetch(`${BACKEND_URL}/logout`, {
+      method: "POST",
+      credentials: 'include',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+    });
+    
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/';
+      localStorage.removeItem('user');
+      window.location.href = '/';
   }
 
   
