@@ -11,8 +11,9 @@ const ManagePropertiesPage = () => {
 
 
   const handleRemoveProperty = async (propertyId) => {
+    const apiUrl = import.meta.env.VITE_API_URL;
     try {
-      const response = await fetch(`http://localhost:3000/properties/${propertyId}`, {
+      const response = await fetch(`${apiUrl}/properties/${propertyId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

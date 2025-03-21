@@ -40,9 +40,9 @@ function NewBookingPage() {
 			navigate('/login', { gt: encodedData });
 			return;
 		}
-
+		const apiUrl = import.meta.env.VITE_API_URL;
 		try {
-			const response = await fetch('http://localhost:3000/book', {
+			const response = await fetch(`${apiUrl}/book`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',

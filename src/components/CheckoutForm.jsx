@@ -7,7 +7,7 @@ import { useAuthentication } from "../AuthenticationContext";
 // Replace with your Stripe publishable key
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-// eslint-disable-next-line react/prop-types
+// eslint-disable-next-line react/prop-types, no-unused-vars
 const CheckoutFormContent = ({ onPaymentSuccess }) => {
   const [error, setError] = useState(null);
   const [processing, setProcessing] = useState(false);
@@ -18,9 +18,10 @@ const CheckoutFormContent = ({ onPaymentSuccess }) => {
     const bookingData = JSON.parse(localStorage.getItem('bookingData'));
     console.log("bookingData: ", bookingData);
     const createCheckoutSession = async () => {
+    const apiUrl = import.meta.env.VITE_API_URL;
       try {
         const response = await fetch(
-          "http://localhost:3000/create-checkout-session",
+          `${apiUrl}/create-checkout-session`,
           {
             method: "POST",
             headers: {
