@@ -36,24 +36,18 @@ const BookingFormDetails = ({ onSubmit }) => {
   useEffect(() => {
     const fetchAvailability = async () => {
       try {
-        console.log("Fetching availability from:", `${BACKEND_URL}/availability/this-week`);
         const response = await fetch(`${BACKEND_URL}/book/availability/this-week`);
-        console.log("Response status:", response.status);
         if (!response.ok) {
           throw new Error(`Failed to fetch availability: ${response.status}`);
         }
         const data = await response.json();
-        console.log("Fetched availability data:", data);
         if (!Array.isArray(data) || data.length === 0) {
-          console.log("No valid dates received, falling back to gen14days");
           setAvailability(gen14days());
         } else {
-          console.log("Setting availability with fetched dates");
           setAvailability(data);
         }
       } catch (error) {
         console.error('Error fetching availability:', error);
-        console.log("Falling back to gen14days due to error");
         setAvailability(gen14days());
       }
     }
