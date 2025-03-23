@@ -196,17 +196,20 @@ const BookingFormDetails = ({ onSubmit }) => {
         </div>
         <p className="text-red-500 text-center hidden" id="choose-address-message">* please select an address</p>
         
-        <div id="calendar-container" className="snap-x p-2 overflow-x-scroll h-[8rem] flex justify-center flex-col no-scrollbar">
-          <div id="calendarContainer" className="p1 no-scrollbar mt-5 flex">
-            {availability.map((d, index) => (
-              <DayCard 
-                key={index}
-                idx={index}
-                day={new Date(d)}
-                selected={selectedDate}
-                onSelect={handleSelectBookingDate}
-              />
-            ))}
+        <div className="mt-5">
+          <h2 className="text-sm font-medium text-gray-700 mb-2">select date of service</h2>
+          <div className="border border-gray-300 rounded-lg overflow-x-auto no-scrollbar">
+            <div className="flex">
+              {availability.map((d, index) => (
+                <DayCard 
+                  key={index}
+                  idx={index}
+                  day={new Date(d)}
+                  selected={selectedDate}
+                  onSelect={handleSelectBookingDate}
+                />
+              ))}
+            </div>
           </div>
         </div>
         <p className="text-red-500 text-center hidden" id="choose-date-message">* please select a date</p>
