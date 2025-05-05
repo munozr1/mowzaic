@@ -55,6 +55,9 @@ const Register = () => {
       return;
     }
 
+    console.log(formData);
+    console.log(BACKEND_URL);
+
     try {
       const response = await fetch(`${BACKEND_URL}/register`, {
         method: 'POST',
@@ -80,16 +83,11 @@ const Register = () => {
       await login(formData.email, formData.password);
       
       // Handle navigation after successful registration
-      const returnTo = getParam('returnTo');
-      if (returnTo) {
-        navigate(returnTo);
+      const gt = getParam('gt');
+      if (gt) {
+        navigate('/book', {gt});
       } else {
-        const gt = getParam('gt');
-        if (gt) {
-          navigate('/book', {gt});
-        } else {
-          navigate('/');
-        }
+        navigate('/');
       }
     } catch (err) {
       setError(err.message || 'An error occurred during registration');
@@ -239,7 +237,7 @@ const Register = () => {
         <div className="text-center">
           <span className="text-sm text-gray-600">Already have an account? </span>
           <button 
-            onClick={() => navigate('/login', { returnTo: getParam('returnTo') })}
+            onClick={() => navigate('/login', { gt: getParam('gt') })}
             className="text-sm font-medium text-[#2EB966] hover:text-[#2EB966]/80"
           >
             Sign in

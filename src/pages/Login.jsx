@@ -93,7 +93,7 @@ const Login = () => {
         <div className="text-center">
           <span className="text-sm text-gray-600">{"Don't have an account? "}</span>
           <button 
-            onClick={() => navigate('/register', { returnTo: getParam('returnTo') })}
+            onClick={() => navigate('/register', { gt: getParam('gt') })}
             className="text-sm font-medium text-[#2EB966] hover:text-[#2EB966]/80"
           >
             Create one

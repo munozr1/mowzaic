@@ -16,6 +16,8 @@ const CheckoutFormContent = ({ onPaymentSuccess }) => {
 
   useEffect(() => {
     const bookingData = JSON.parse(localStorage.getItem('bookingData'));
+    const bookingId = bookingData?.bookingId;
+    const propertyId = bookingData?.propertyId;
     const createCheckoutSession = async () => {
       try {
         const response = await fetch(
@@ -27,8 +29,8 @@ const CheckoutFormContent = ({ onPaymentSuccess }) => {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              amount: bookingData?.totalAmount || 35,
-              bookingId: bookingData?.bookingId || null,
+              bookingId: bookingId || null,
+              propertyId: propertyId || null,
             }),
           }
         );

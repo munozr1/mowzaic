@@ -4,27 +4,40 @@ import PropTypes from 'prop-types';
 import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
 import { BACKEND_URL } from '../constants';
-function BookingStatus({bookingId, updateBookingState}) {
+function BookingStatus({bookingId, updateBookingState, interval = 1000}) {
   const { token } = useAuthentication();
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState('pending');
 
   useEffect(() => {
-    const fetchStatus = async () => {
-      const res = await fetch(`${BACKEND_URL}/book/${bookingId}`, {
-        method: 'GET',
-        headers: {
+    let timer
+    const poll = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/book/status/${bookingId}`, {
+          method: 'GET',
+          headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       const data = await res.json();
-      setStatus(data.status);
       if (data.status === 'paid') {
+        clearInterval(timer);
         updateBookingState('thank-you');
       }
+      else if (data.status === 'canceled') {
+        clearInterval(timer);
+        setStatus('canceled');
+      }
+      } catch (error) {
+        console.error('Error polling booking status:', error);
+        clearInterval(timer);
+      }
     }
-    fetchStatus();
+    poll();
+    timer = setInterval(poll, interval);
+
+    return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [interval, updateBookingState]);
 
   return (
     <div className="mt-10 flex items-center justify-center">
@@ -57,7 +70,7 @@ function BookingStatus({bookingId, updateBookingState}) {
             </div>
           ) : status === 'canceled' ? (
             <div className="text-3xl text-red-500">
-              Your booking has been canceled. Please try again.
+              Your booking has been canceled.
             </div>
           ) : null}
         </motion.div>
@@ -77,7 +90,8 @@ function BookingStatus({bookingId, updateBookingState}) {
 
 BookingStatus.propTypes = {
   bookingId: PropTypes.string.isRequired,
-  updateBookingState: PropTypes.func.isRequired
+  updateBookingState: PropTypes.func.isRequired,
+  interval: PropTypes.number
 }
 
 export default BookingStatus;
