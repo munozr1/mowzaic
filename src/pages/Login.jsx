@@ -27,7 +27,7 @@ const Login = () => {
       if (gt) {
         navigate('/book', {gt});
       } else {
-        navigate('/');
+        navigate('/book');
       }
     } catch (err) {
       setError(err.message || 'An error occurred during login');

@@ -18,118 +18,66 @@ export const useAuthentication = () => {
 // Provider component
 export const AuthenticationProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => {
-    // Initialize token from localStorage if available
-    return localStorage.getItem('token') || null;
-  });
+  const [token, setToken] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [addresses, setAddresses] = useState([]);
+
+
+  const checkToken = async (currentToken) => {
+    try {
+      let decoded = jwtDecode(currentToken);
+
+      if (decoded.exp < Date.now() / 1000) {
+        const newToken = await refreshAccessToken();
+        if (!newToken) throw new Error("Token refresh failed");
+        decoded = jwtDecode(newToken);
+        setToken(newToken);
+      }
+
+      setUser(decoded);
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.error("Token check failed:", err);
+      setUser(null);
+      setToken(null);
+      setIsAuthenticated(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      checkToken(token);
+    } else {
+      // try refresh on initial load
+      (async () => {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          setToken(newToken);
+        }
+      })();
+    }
+  }, [token]);
 
 
   const refreshAccessToken = async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/refresh`, {
-        method: 'POST',
-        credentials: 'include', // Important: needed to send cookies
+        method: "POST",
+        credentials: "include", // Needed to send cookies
       });
-      
-      if (!response.ok) throw new Error('Refresh failed');
-      
+
+      if (!response.ok) {
+        throw new Error("Refresh failed");
+      }
+
       const data = await response.json();
-      setToken(data.accessToken);
-      return data.accessToken;
+      const newToken = data.accessToken;
+
+      return newToken;
     } catch (error) {
-      logout();
-      throw error;
+      console.error("Refresh token error:", error);
+      return null;
     }
   };
-
-  const ping = async (jwtToken) => {
-    try {
-      const res = await fetch(`${BACKEND_URL}/ping`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${jwtToken}`
-        },
-        credentials: 'include'
-      });
-
-      if (res.status === 401) {
-        // Token expired, try to refresh
-        const newToken = await refreshAccessToken();
-        // Retry the ping with new token
-        return ping(newToken);
-      }
-
-      if (res.ok) {
-        return await res.json();
-      }
-      return res;
-    } catch (error) {
-      console.error("Ping error:", error);
-      return { ok: false };
-    }
-  }
-
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      const stored_token = localStorage.getItem('token');
-      if (!stored_token) {
-        setIsAuthenticated(false);
-        return;
-      }
-
-      try {
-        setToken(stored_token);
-        const response = await ping(stored_token);
-        
-        if (response.ok !== false) {
-          setIsAuthenticated(true);
-          const userData = jwtDecode(stored_token);
-          setUser(userData);
-        } else {
-          setToken(null);
-          setIsAuthenticated(false);
-          localStorage.removeItem('token');
-        }
-      } catch (error) {
-        console.error("Authentication check error:", error);
-        setToken(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('token');
-      }
-    };
-
-    checkAuthentication();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-          
-          
-  useEffect(() => {
-    if (token) {
-      // Store token in localStorage whenever it changes
-      localStorage.setItem('token', token);
-      setIsAuthenticated(true);
-      const user = jwtDecode(token);
-      setUser(user);
-      const fetchAddresses = async ()=>{
-        const res = await fetch(`${BACKEND_URL}/properties`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({userId: user.id})
-        });
-        setAddresses(await res.json());
-      }
-      fetchAddresses();
-    } else {
-      localStorage.removeItem('token');
-      setIsAuthenticated(false);
-    }
-  }, [token]);
 
   useEffect(() => {
     if (user) {
@@ -146,6 +94,7 @@ export const AuthenticationProvider = ({ children }) => {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: 'include',
     });
     let data = await res.json();
     if (res.ok) {
@@ -169,8 +118,8 @@ export const AuthenticationProvider = ({ children }) => {
     });
     
     localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/';
+    localStorage.removeItem('user');
+    window.location.href = '/';
   }
 
   
@@ -181,7 +130,6 @@ export const AuthenticationProvider = ({ children }) => {
       login, 
       logout, 
       isAuthenticated, 
-      addresses,
       refreshAccessToken
     }}>
       {children}

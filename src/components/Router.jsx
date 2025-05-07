@@ -14,6 +14,10 @@ const Router = () => {
   const { path } = useContext(NavigationContext);
   const { isAuthenticated } = useAuthentication();
 
+
+  // if (!isAuthenticated) {
+  //   return <Login />;
+  // }
   // Remove query parameters from path for matching
   const basePath = path.split('?')[0];
 

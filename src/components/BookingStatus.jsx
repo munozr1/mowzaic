@@ -19,7 +19,8 @@ function BookingStatus({bookingId, updateBookingState, interval = 1000}) {
         }
       });
       const data = await res.json();
-      if (data.status === 'paid') {
+      console.log("booking status", data);
+      if (data.payment_status === 'paid') {
         clearInterval(timer);
         updateBookingState('thank-you');
       }

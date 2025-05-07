@@ -4,12 +4,23 @@ import { useEffect, useState } from "react";
 import { BACKEND_URL } from "../constants";
 import { useNavigation } from "../NavigationContext";
 const ManagePropertiesPage = () => {
-  const {addresses, token} = useAuthentication();
+  const {token, user} = useAuthentication();
   const [properties, setProperties] = useState([]);
   const {navigate} = useNavigation();
   useEffect(()=>{
-    setProperties(addresses);
-  },[addresses]);
+    const fetchProperties = async () => {
+      const res = await fetch(`${BACKEND_URL}/properties/user/${user.id}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      setProperties(data.properties);
+    }
+    fetchProperties();
+  },[]);
 
 
   const handleRemoveProperty = async (propertyId) => {

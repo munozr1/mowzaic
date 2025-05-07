@@ -53,7 +53,9 @@ function NewBookingPage() {
 
 
 			if (!response.ok) {
-				throw new Error('Booking failed');
+				const errorData = await response.json();
+				setError(errorData.details || 'Failed to submit booking. Please try again.');
+				throw new Error(errorData.details || 'Failed to submit booking. Please try again.');
 			}
 
 			const bookingResult = await response.json();
@@ -64,8 +66,8 @@ function NewBookingPage() {
 			setBookingState('checkout');
 			
 		} catch (error) {
+			window.scrollTo(0, 0);
 			console.error('Error submitting booking:', error);
-			setError('Failed to submit booking. Please try again.');
 			throw error;
 		}
 	};
