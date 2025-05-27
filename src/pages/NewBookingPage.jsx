@@ -59,6 +59,7 @@ function NewBookingPage() {
 			}
 
 			const bookingResult = await response.json();
+			console.log(bookingResult);
 
 			localStorage.setItem('bookingData', JSON.stringify(bookingResult));
 			

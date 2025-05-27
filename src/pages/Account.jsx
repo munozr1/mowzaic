@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthentication } from '../AuthenticationContext';
 import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
@@ -9,11 +9,26 @@ function Account() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
     phone: user?.phone || ''
   });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const response = await fetch(`${BACKEND_URL}/user/${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      console.log(data);
+      setUserData(data);
+    }
+    fetchUser();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -144,18 +159,18 @@ function Account() {
               <div className="border-b pb-4">
                 <h2 className="text-sm font-medium text-gray-500">Name</h2>
                 <p className="mt-1 text-lg text-gray-900">
-                  {user?.first_name} {user?.last_name}
+                  {userData?.first_name} {userData?.last_name}
                 </p>
               </div>
 
               <div className="border-b pb-4">
                 <h2 className="text-sm font-medium text-gray-500">Email</h2>
-                <p className="mt-1 text-lg text-gray-900">{user?.email}</p>
+                <p className="mt-1 text-lg text-gray-900">{userData?.email}</p>
               </div>
 
               <div className="border-b pb-4">
                 <h2 className="text-sm font-medium text-gray-500">Phone</h2>
-                <p className="mt-1 text-lg text-gray-900">{user?.phone}</p>
+                <p className="mt-1 text-lg text-gray-900">{userData?.phone}</p>
               </div>
             </div>
 
