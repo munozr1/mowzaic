@@ -77,7 +77,7 @@ const ManagePropertiesPage = () => {
                 </div>
                 <button 
                   onClick={() => handleRemoveProperty(property.id)}
-                  className="text-red-500 hover:text-red-700 p-1"
+                  className="text-red-500 hover:cursor-pointer  hover:text-red-700 p-1"
                 >
                   <Trash2 size={20} />
                 </button>
@@ -106,7 +106,7 @@ const ManagePropertiesPage = () => {
                     </span>
                     <button 
                       onClick={() => handleCancelSubscription(property.id)}
-                    className="inline-flex items-center text-sm text-red-500 hover:text-red-700"
+                    className="inline-flex items-center hover:cursor-pointer text-sm text-red-500 hover:text-red-700"
                   >
                     <X size={16} className="mr-1" />
                     Cancel Subscription
