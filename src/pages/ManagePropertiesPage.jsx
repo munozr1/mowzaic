@@ -17,7 +17,21 @@ const ManagePropertiesPage = () => {
         }
       });
       const data = await res.json();
-      setProperties(data.properties);
+      console.log(data);
+      if (!res.ok) {
+        throw new Error('Failed to fetch properties');
+      }
+      if (!data.properties || !Array.isArray(data.properties)) {
+        console.error('Invalid properties data:', data);
+        return;
+      }
+      // Set properties state with the fetched data
+      if (data.properties.length === 0) {
+        console.warn('No properties found for this user.');
+      }else{
+        console.log('Fetched properties:', data.properties);
+        setProperties(data.properties);
+      }
     }
     fetchProperties();
   },[]);
