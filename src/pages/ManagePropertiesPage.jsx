@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { BACKEND_URL } from "../constants";
 import { useNavigation } from "../NavigationContext";
 const ManagePropertiesPage = () => {
-  const {token, user} = useAuthentication();
+  const {token} = useAuthentication();
   const [properties, setProperties] = useState([]);
   const {navigate} = useNavigation();
   useEffect(()=>{
     const fetchProperties = async () => {
-      const res = await fetch(`${BACKEND_URL}/properties/user/${user.id}`, {
+      const res = await fetch(`${BACKEND_URL}/properties`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -50,7 +50,7 @@ const ManagePropertiesPage = () => {
         throw new Error('Failed to remove property');
       }
       
-      setProperties(properties.filter((property) => property.id !== propertyId));
+      setProperties(properties.filter((property) => property.property_id !== propertyId));
     } catch (error) {
       console.error('Error removing property:', error);
     }
@@ -79,18 +79,18 @@ const ManagePropertiesPage = () => {
       ) : (
         <div className="grid gap-6">
           {properties.map((property) => (
-            <div key={property.id} className="bg-white rounded-md shadow-sm p-6">
+            <div key={property.property_id} className="bg-white rounded-md shadow-sm p-6">
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-800">
                     {property.address}
                   </h2>
                   <p className="text-gray-600 mt-1">
-                    {property.city}, {property.state} {property.zipCode}
+                    {property.city}, {property.state} {property.postal}
                   </p>
                 </div>
                 <button 
-                  onClick={() => handleRemoveProperty(property.id)}
+                  onClick={() => handleRemoveProperty(property.property_id)}
                   className="text-red-500 hover:cursor-pointer  hover:text-red-700 p-1"
                 >
                   <Trash2 size={20} />
@@ -119,7 +119,7 @@ const ManagePropertiesPage = () => {
                       Next billing: {new Date().toLocaleDateString()}
                     </span>
                     <button 
-                      onClick={() => handleCancelSubscription(property.id)}
+                      onClick={() => handleCancelSubscription(property.property_id)}
                     className="inline-flex items-center hover:cursor-pointer text-sm text-red-500 hover:text-red-700"
                   >
                     <X size={16} className="mr-1" />
