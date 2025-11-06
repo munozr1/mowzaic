@@ -15,7 +15,8 @@ function BookingStatus({bookingId, updateBookingState, interval = 1000}) {
         const res = await fetch(`${BACKEND_URL}/book/status/${bookingId}`, {
           method: 'GET',
           headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
         }
       });
       const data = await res.json();

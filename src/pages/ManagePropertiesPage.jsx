@@ -116,7 +116,7 @@ const ManagePropertiesPage = () => {
                 
                   <div className="mt-4 flex justify-between items-center">
                     <span className="text-sm text-gray-500">
-                      Next billing: {new Date().toLocaleDateString()}
+                      Next service: {new Date().toLocaleDateString()}
                     </span>
                     <button 
                       onClick={() => handleCancelSubscription(property.property_id)}
