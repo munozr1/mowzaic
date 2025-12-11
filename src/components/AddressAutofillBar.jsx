@@ -22,8 +22,7 @@ const AddressAutofillBar = ({ onSelect, initialAddress }) => {
           initialAddress.postal
       );
     }
-    if (!("geolocation" in navigator)) return;
-    navigator.geolocation.getCurrentPosition(setUserLocation);
+    // Only request geolocation when user interacts, not automatically
   }, [initialAddress]);
 
   useEffect(() => {

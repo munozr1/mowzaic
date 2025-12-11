@@ -2,15 +2,20 @@ import { NavigationProvider } from './NavigationContext.jsx'
 import { AuthenticationProvider } from './AuthenticationContext.jsx'
 import { LoginModalProvider, useLoginModal } from './LoginModalContext.jsx'
 import Router from './components/Router'
-import LoginModal from './pages/Login'
+import AuthModal from './pages/Login'
 
 function AppContent() {
-	const { isOpen, closeLoginModal } = useLoginModal();
+	const { isOpen, mode, closeLoginModal, switchMode } = useLoginModal();
 	
 	return (
 		<>
 			<Router />
-			<LoginModal isOpen={isOpen} onClose={closeLoginModal} />
+			<AuthModal 
+				isOpen={isOpen} 
+				onClose={closeLoginModal} 
+				mode={mode}
+				onSwitchMode={switchMode}
+			/>
 		</>
 	);
 }

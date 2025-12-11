@@ -1,6 +1,11 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { BACKEND_URL } from "./constants";
+import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./constants";
+
+// Initialize Supabase client
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 // Create context outside of the provider component
 const AuthenticationContext = createContext(null);
 
@@ -17,153 +22,88 @@ export const useAuthentication = () => {
 // Provider component
 export const AuthenticationProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
+  const [session, setSession] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const refreshTimer = useRef(null);
-
-  const clearRefreshTimer = () => {
-    if (refreshTimer.current) {
-      clearTimeout(refreshTimer.current);
-      refreshTimer.current = null;
-    }
-  };
-
-  // Minimal JWT decode helper (only decodes payload; does not verify signature)
-  const decodeJwt = (token) => {
-    try {
-      const parts = token.split('.');
-      if (parts.length < 2) return null;
-      let payload = parts[1];
-      // base64url -> base64
-      payload = payload.replace(/-/g, '+').replace(/_/g, '/');
-      // pad with '='
-      const pad = payload.length % 4;
-      if (pad) payload += '='.repeat(4 - pad);
-      const decoded = atob(payload);
-      // decode percent-encoded utf-8
-      const json = decodeURIComponent(
-        decoded.split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
-      );
-      return JSON.parse(json);
-    } catch (err) {
-      console.error('Failed to decode jwt:', err);
-      return null;
-    }
-  };
-  // keep the actual refresh function in a ref so scheduled timeouts call a stable reference
-  const refreshAccessTokenRef = useRef(null);
-
-  const scheduleRefresh = useCallback((accessToken) => {
-    clearRefreshTimer();
-    if (!accessToken) return;
-    try {
-      const decoded = decodeJwt(accessToken);
-      const now = Date.now() / 1000;
-      const msUntilExpiry = (decoded.exp - now) * 1000;
-      // refresh 60 seconds before expiry
-      const refreshIn = Math.max(msUntilExpiry - 60_000, 0);
-      refreshTimer.current = setTimeout(() => {
-        if (refreshAccessTokenRef.current) refreshAccessTokenRef.current();
-      }, refreshIn);
-    } catch (err) {
-      console.error("Failed to schedule token refresh:", err);
-    }
-  }, []);
-
-  const setAuthFromToken = useCallback((accessToken) => {
-    if (!accessToken) {
-      clearRefreshTimer();
-      setToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
-      return;
-    }
-    try {
-      const decoded = decodeJwt(accessToken);
-      setToken(accessToken);
-      setUser(decoded);
-      setIsAuthenticated(true);
-      scheduleRefresh(accessToken);
-    } catch (err) {
-      console.error("Invalid access token:", err);
-      setToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
-    }
-  }, [scheduleRefresh]);
-
-  const refreshAccessToken = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/refresh`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Refresh failed");
-      const data = await response.json();
-      const newToken = data?.accessToken || null;
-      if (newToken) setAuthFromToken(newToken);
-      return newToken;
-    } catch (err) {
-      console.error("Refresh token error:", err);
-      setAuthFromToken(null);
-      return null;
-    }
-  };
-
-  // expose the refresh function through the ref so scheduled timers call the latest function
-  refreshAccessTokenRef.current = refreshAccessToken;
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // on mount try a single refresh (server-side refresh cookie expected)
-    (async () => {
-      if (refreshAccessTokenRef.current) await refreshAccessTokenRef.current();
-    })();
-    return () => clearRefreshTimer();
-    // run only once on mount
-  }, []);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session);
+      setLoading(false);
+    });
 
-  useEffect(() => {
-    if (user) localStorage.setItem("user", JSON.stringify(user));
-    else localStorage.removeItem("user");
-  }, [user]);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const login = async (email, password) => {
-    const res = await fetch(`${BACKEND_URL}/login`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Login failed");
-    if (data?.accessToken) setAuthFromToken(data.accessToken);
+    
+    if (error) throw error;
+    return data;
+  };
+
+  const signInWithGoogle = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/book',
+      },
+    });
+    
+    if (error) throw error;
+    return data;
+  };
+
+  const register = async (email, password, metadata = {}) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: metadata,
+      },
+    });
+    
+    if (error) throw error;
+    return data;
   };
 
   const logout = async () => {
-    try {
-      await fetch(`${BACKEND_URL}/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
-      });
-    } catch (err) {
-      console.error("Logout request failed:", err);
-    } finally {
-      clearRefreshTimer();
-      setAuthFromToken(null);
-      window.location.href = "/";
-    }
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    setSession(null);
+    setUser(null);
+    setIsAuthenticated(false);
+  };
+
+  const value = {
+    user,
+    session,
+    token: session?.access_token ?? null,
+    isAuthenticated,
+    loading,
+    login,
+    signInWithGoogle,
+    register,
+    logout,
+    supabase,
   };
 
   return (
-    <AuthenticationContext.Provider value={{
-      user,
-      token,
-      login,
-      logout,
-      isAuthenticated,
-      refreshAccessToken,
-    }}>
+    <AuthenticationContext.Provider value={value}>
       {children}
     </AuthenticationContext.Provider>
   );

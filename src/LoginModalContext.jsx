@@ -13,12 +13,31 @@ export const useLoginModal = () => {
 
 export const LoginModalProvider = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [mode, setMode] = useState('login'); // 'login' or 'register'
 
-  const openLoginModal = () => setIsOpen(true);
+  const openLoginModal = () => {
+    setMode('login');
+    setIsOpen(true);
+  };
+  
+  const openRegisterModal = () => {
+    setMode('register');
+    setIsOpen(true);
+  };
+  
   const closeLoginModal = () => setIsOpen(false);
+  
+  const switchMode = (newMode) => setMode(newMode);
 
   return (
-    <LoginModalContext.Provider value={{ isOpen, openLoginModal, closeLoginModal }}>
+    <LoginModalContext.Provider value={{ 
+      isOpen, 
+      mode,
+      openLoginModal, 
+      openRegisterModal,
+      closeLoginModal,
+      switchMode
+    }}>
       {children}
     </LoginModalContext.Provider>
   );
