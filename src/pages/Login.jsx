@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
+import { X } from 'lucide-react';
 import { useNavigation } from '../NavigationContext';
 import { useAuthentication } from '../AuthenticationContext';
 import { getParam } from '../utils';
 
-const Login = () => {
+const LoginModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -11,6 +13,8 @@ const Login = () => {
   const [error, setError] = useState('');
   const {navigate} = useNavigation();
   const {login} = useAuthentication();
+
+  if (!isOpen) return null;
 
   const handleChange = (e) => {
     setFormData({
@@ -23,6 +27,7 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(formData.email, formData.password);
+      onClose();
       const gt = getParam('gt');
       if (gt) {
         navigate('/book', {gt});
@@ -35,8 +40,15 @@ const Login = () => {
   };
 
   return (
-    <div className="mt-40 flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={onClose}>
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-xl relative" onClick={(e) => e.stopPropagation()}>
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          aria-label="Close"
+        >
+          <X className="h-6 w-6" />
+        </button>
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             sign in to your account
@@ -104,4 +116,9 @@ const Login = () => {
   );
 };
 
-export default Login; 
+LoginModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+
+export default LoginModal; 

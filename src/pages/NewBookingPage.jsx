@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from "motion/react";
 import { useAuthentication } from '../AuthenticationContext';
 import { useNavigation } from '../NavigationContext';
+import { useLoginModal } from '../LoginModalContext';
 import BookingFormDetails from '../components/BookingForm';
 import ThankYouBooked from './ThankYouBooked';
 import { fullAddress, encodeJson, getParam } from '../utils';
@@ -15,6 +16,7 @@ function NewBookingPage() {
 	//const [, setBookingData] = useState(null);
 	const { isAuthenticated, token, user } = useAuthentication();
 	const { navigate } = useNavigation();
+	const { openLoginModal } = useLoginModal();
 	const [bookingId, setBookingId] = useState(null);
 
 	useEffect(() => {
@@ -38,7 +40,9 @@ function NewBookingPage() {
 			};
 			
 			const encodedData = encodeJson(formDataWithCleanCodes);
-			navigate('/login', { gt: encodedData });
+			// Store the data and open login modal instead of navigating
+			navigate(window.location.pathname, { gt: encodedData });
+			openLoginModal();
 			return;
 		}
 		try {

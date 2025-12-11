@@ -16,8 +16,8 @@ const CheckoutFormContent = ({ onPaymentSuccess }) => {
 
   useEffect(() => {
     const bookingData = JSON.parse(localStorage.getItem('bookingData'));
-    const bookingId = bookingData?.booking.id|| null;
-    const propertyId = bookingData?.property.id|| null;
+    const bookingId = bookingData?.booking?.id || null;
+    const propertyId = bookingData?.booking?.property_id || null;
     const createCheckoutSession = async () => {
       try {
         const response = await fetch(

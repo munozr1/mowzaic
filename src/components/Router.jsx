@@ -6,7 +6,6 @@ import LandingPage from '../pages/LandingPage';
 import NewBookingPage from '../pages/NewBookingPage';
 import MainContent from '../pages/MainContent';
 import PageLayout from './NavBar';
-import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Account from '../pages/Account';
 
@@ -26,8 +25,6 @@ const Router = () => {
     switch (basePath) {
       case '/':
         return <LandingPage />;
-      case '/login':
-        return <Login />;
       case '/book':
         return <NewBookingPage />;
       case '/register':
@@ -39,8 +36,8 @@ const Router = () => {
     }
   };
 
-  // If it's the landing page or login page and not authenticated, render without layout
-  if ((basePath === '/' || basePath === '/login') && !isAuthenticated) {
+  // If it's the landing page and not authenticated, render without layout
+  if (basePath === '/' && !isAuthenticated) {
     return renderContent();
   }
 

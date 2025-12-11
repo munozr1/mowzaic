@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigation } from '../NavigationContext';
 import { useAuthentication } from '../AuthenticationContext';
+import { useLoginModal } from '../LoginModalContext';
 import { getParam } from '../utils';
 import { BACKEND_URL } from '../constants';
 
@@ -18,6 +19,7 @@ const Register = () => {
   const [emailError, setEmailError] = useState('');
   const {navigate} = useNavigation();
   const {login} = useAuthentication();
+  const { openLoginModal } = useLoginModal();
 
   const handleChange = (e) => {
     setFormData({
@@ -237,7 +239,7 @@ const Register = () => {
         <div className="text-center">
           <span className="text-sm text-gray-600">Already have an account? </span>
           <button 
-            onClick={() => navigate('/login', { gt: getParam('gt') })}
+            onClick={() => openLoginModal()}
             className="text-sm font-medium text-[#2EB966] hover:text-[#2EB966]/80"
           >
             Sign in
