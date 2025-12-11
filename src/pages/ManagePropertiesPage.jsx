@@ -1,52 +1,96 @@
 import { Trash2, X } from "lucide-react";
 import { useAuthentication } from "../AuthenticationContext";
 import { useEffect, useState } from "react";
-import { BACKEND_URL } from "../constants";
 import { useNavigation } from "../NavigationContext";
+
 const ManagePropertiesPage = () => {
-  const {token} = useAuthentication();
+  const {supabase, user} = useAuthentication();
   const [properties, setProperties] = useState([]);
   const {navigate} = useNavigation();
+  
   useEffect(()=>{
     const fetchProperties = async () => {
-      const res = await fetch(`${BACKEND_URL}/properties`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      console.log(data);
-      if (!res.ok) {
-        throw new Error('Failed to fetch properties');
-      }
-      if (!data.properties || !Array.isArray(data.properties)) {
-        console.error('Invalid properties data:', data);
+      if (!user) {
+        console.warn('No user logged in');
         return;
       }
-      // Set properties state with the fetched data
-      if (data.properties.length === 0) {
+
+      // Get user ID from users table (trigger auto-creates on signup)
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('uid', user.id)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        return;
+      }
+
+      // Fetch properties through the user_properties junction table
+      const { data, error } = await supabase
+        .from('user_properties')
+        .select(`
+          property_id,
+          properties (
+            id,
+            address,
+            city,
+            state,
+            postal,
+            coordinates,
+            codes,
+            has_pets
+          )
+        `)
+        .eq('user_id', userData.id)
+        .is('deleted_at', null);
+      
+      if (error) {
+        console.error('Error fetching properties:', error);
+        return;
+      }
+      
+      if (!data || data.length === 0) {
         console.warn('No properties found for this user.');
-      }else{
-        console.log('Fetched properties:', data.properties);
-        setProperties(data.properties);
+        setProperties([]);
+      } else {
+        // Flatten the structure to get just the properties
+        const propertyList = data.map(item => ({
+          ...item.properties,
+          property_id: item.properties.id
+        }));
+        console.log('Fetched properties:', propertyList);
+        setProperties(propertyList);
       }
     }
     fetchProperties();
-  },[]);
+  }, [user, supabase]);
 
 
   const handleRemoveProperty = async (propertyId) => {
     try {
-      const response = await fetch(`${BACKEND_URL}/properties/${propertyId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) {
+      // Get the user's integer ID from the users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('uid', user.id)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        throw new Error('Failed to identify user');
+      }
+
+      // Soft delete by setting deleted_at timestamp in user_properties
+      const { error } = await supabase
+        .from('user_properties')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('property_id', propertyId)
+        .eq('user_id', userData.id);
+      
+      if (error) {
+        console.error('Error removing property:', error);
         throw new Error('Failed to remove property');
       }
       

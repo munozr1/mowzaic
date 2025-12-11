@@ -3,32 +3,36 @@ import { useAuthentication } from '../AuthenticationContext';
 import PropTypes from 'prop-types';
 import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
-import { BACKEND_URL } from '../constants';
+
 function BookingStatus({bookingId, updateBookingState, interval = 1000}) {
-  const { token } = useAuthentication();
+  const { supabase } = useAuthentication();
   const [status, setStatus] = useState('pending');
 
   useEffect(() => {
     let timer
     const poll = async () => {
       try {
-        const res = await fetch(`${BACKEND_URL}/book/status/${bookingId}`, {
-          method: 'GET',
-          headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('payment_status, service_status')
+          .eq('id', bookingId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching booking status:', error);
+          clearInterval(timer);
+          return;
         }
-      });
-      const data = await res.json();
-      console.log("booking status", data);
-      if (data.payment_status === 'paid') {
-        clearInterval(timer);
-        updateBookingState('thank-you');
-      }
-      else if (data.status === 'canceled') {
-        clearInterval(timer);
-        setStatus('canceled');
-      }
+
+        console.log("booking status", data);
+        if (data.payment_status === 'paid') {
+          clearInterval(timer);
+          updateBookingState('thank-you');
+        }
+        else if (data.service_status === 'canceled') {
+          clearInterval(timer);
+          setStatus('canceled');
+        }
       } catch (error) {
         console.error('Error polling booking status:', error);
         clearInterval(timer);
@@ -39,7 +43,7 @@ function BookingStatus({bookingId, updateBookingState, interval = 1000}) {
 
     return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interval, updateBookingState]);
+  }, [interval, updateBookingState, bookingId, supabase]);
 
   return (
     <div className="mt-10 flex items-center justify-center">

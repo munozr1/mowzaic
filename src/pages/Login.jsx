@@ -10,10 +10,7 @@ const AuthModal = ({ isOpen, onClose, mode, onSwitchMode }) => {
     email: '',
     confirmEmail: '',
     password: '',
-    confirmPassword: '',
-    firstName: '',
-    lastName: '',
-    phone: ''
+    confirmPassword: ''
   });
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -54,11 +51,7 @@ const AuthModal = ({ isOpen, onClose, mode, onSwitchMode }) => {
       }
 
       try {
-        await register(formData.email, formData.password, {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone
-        });
+        await register(formData.email, formData.password);
         
         onClose();
         
@@ -149,52 +142,9 @@ const AuthModal = ({ isOpen, onClose, mode, onSwitchMode }) => {
           </div>
           
           <div className="rounded-md shadow-sm space-y-4">
-            {mode === 'register' && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="firstName" className="sr-only">First Name</label>
-                    <input
-                      id="firstName"
-                      name="firstName"
-                      type="text"
-                      required
-                      className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                      placeholder="First Name"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="lastName" className="sr-only">Last Name</label>
-                    <input
-                      id="lastName"
-                      name="lastName"
-                      type="text"
-                      required
-                      className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                      placeholder="Last Name"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="phone" className="sr-only">Phone Number</label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="text"
-                    required
-                    className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                    placeholder="Phone Number"
-                    value={formData.phone}
-                    onChange={handleChange}
-                  />
-                </div>
-              </>
-            )}
-            
+          </div>
+          
+          <div className="rounded-md shadow-sm space-y-4">
             <div>
               <label htmlFor="email" className="sr-only">email address</label>
               <input

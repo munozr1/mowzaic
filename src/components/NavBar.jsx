@@ -9,7 +9,12 @@ const PageLayout = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const {isAuthenticated, logout} = useAuthentication();
-  const {path, navigate} = useNavigation()
+  const {path, navigate} = useNavigation();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   // Check if mobile on mount and when window resizes
   useEffect(() => {
@@ -106,7 +111,7 @@ const PageLayout = ({ children }) => {
               login
             </button>
             :
-            <button onClick={logout} className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
+            <button onClick={handleLogout} className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
               logout
             </button>
             }

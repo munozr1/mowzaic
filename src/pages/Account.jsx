@@ -2,33 +2,44 @@ import { useState, useEffect } from 'react';
 import { useAuthentication } from '../AuthenticationContext';
 import { motion } from "motion/react";
 import { Loader2 } from "lucide-react";
-import { BACKEND_URL } from '../constants';
 
 function Account() {
-  const { user, token, refreshAccessToken } = useAuthentication();
+  const { user, supabase } = useAuthentication();
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [userData, setUserData] = useState(null);
   const [formData, setFormData] = useState({
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
-    phone: user?.phone || ''
+    first_name: '',
+    last_name: '',
+    phone: ''
   });
 
   useEffect(() => {
     const fetchUser = async () => {
-      const response = await fetch(`${BACKEND_URL}/user/${user.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      console.log(data);
+      if (!user) return;
+
+      // Get user data from users table (trigger auto-creates on signup)
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('uid', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user:', error);
+        return;
+      }
+
       setUserData(data);
+      setFormData({
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        phone: data.phone || ''
+      });
     }
     fetchUser();
-  }, []);
+  }, [user, supabase]);
 
   const handleChange = (e) => {
     setFormData({
@@ -43,26 +54,32 @@ function Account() {
     setError(null);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/update-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
+      // Update users table using uid
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          phone: formData.phone
+        })
+        .eq('uid', user.id);
 
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update profile');
+      if (updateError) {
+        throw updateError;
       }
 
-      // Refresh the token to get updated user data
-      await refreshAccessToken();
+      // Update local state
+      setUserData({
+        ...userData,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone: formData.phone
+      });
+
       setIsEditing(false);
     } catch (err) {
-      setError(err.message);
+      console.error('Error updating profile:', err);
+      setError(err.message || 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
     }

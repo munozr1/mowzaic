@@ -25,6 +25,27 @@ export const AuthenticationProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
+
+  // Check if user profile is complete
+  const checkProfileCompletion = async (userId) => {
+    if (!userId) return;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('first_name, last_name, phone')
+      .eq('uid', userId)
+      .single();
+
+    if (error) {
+      console.error('Error checking profile:', error);
+      return;
+    }
+
+    // Profile is incomplete if any required field is missing or empty
+    const isIncomplete = !data?.first_name || !data?.last_name || !data?.phone;
+    setNeedsProfileCompletion(isIncomplete);
+  };
 
   useEffect(() => {
     // Get initial session
@@ -33,6 +54,10 @@ export const AuthenticationProvider = ({ children }) => {
       setUser(session?.user ?? null);
       setIsAuthenticated(!!session);
       setLoading(false);
+      
+      if (session?.user) {
+        checkProfileCompletion(session.user.id);
+      }
     });
 
     // Listen for auth changes
@@ -41,6 +66,12 @@ export const AuthenticationProvider = ({ children }) => {
       setUser(session?.user ?? null);
       setIsAuthenticated(!!session);
       setLoading(false);
+      
+      if (session?.user) {
+        checkProfileCompletion(session.user.id);
+      } else {
+        setNeedsProfileCompletion(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -87,6 +118,7 @@ export const AuthenticationProvider = ({ children }) => {
     setSession(null);
     setUser(null);
     setIsAuthenticated(false);
+    setNeedsProfileCompletion(false);
   };
 
   const value = {
@@ -95,6 +127,8 @@ export const AuthenticationProvider = ({ children }) => {
     token: session?.access_token ?? null,
     isAuthenticated,
     loading,
+    needsProfileCompletion,
+    checkProfileCompletion,
     login,
     signInWithGoogle,
     register,
