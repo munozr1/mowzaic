@@ -40,7 +40,7 @@ const CompleteProfileModal = ({ isOpen, onComplete }) => {
           phone: formData.phone,
           promo_opt: formData.promo_opt
         })
-        .eq('uid', user.id);
+        .eq('id', user.id);
 
       if (updateError) {
         throw updateError;

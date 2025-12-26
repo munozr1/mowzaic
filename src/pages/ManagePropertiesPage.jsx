@@ -15,19 +15,8 @@ const ManagePropertiesPage = () => {
         return;
       }
 
-      // Get user ID from users table (trigger auto-creates on signup)
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('uid', user.id)
-        .single();
-
-      if (userError) {
-        console.error('Error fetching user:', userError);
-        return;
-      }
-
       // Fetch properties through the user_properties junction table
+      // user.id is now directly the uuid in users table
       const { data, error } = await supabase
         .from('user_properties')
         .select(`
@@ -43,7 +32,7 @@ const ManagePropertiesPage = () => {
             has_pets
           )
         `)
-        .eq('user_id', userData.id)
+        .eq('user_id', user.id)
         .is('deleted_at', null);
       
       if (error) {
@@ -70,24 +59,13 @@ const ManagePropertiesPage = () => {
 
   const handleRemoveProperty = async (propertyId) => {
     try {
-      // Get the user's integer ID from the users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('uid', user.id)
-        .single();
-
-      if (userError) {
-        console.error('Error fetching user:', userError);
-        throw new Error('Failed to identify user');
-      }
-
       // Soft delete by setting deleted_at timestamp in user_properties
+      // user.id is now directly the uuid in users table
       const { error } = await supabase
         .from('user_properties')
         .update({ deleted_at: new Date().toISOString() })
         .eq('property_id', propertyId)
-        .eq('user_id', userData.id);
+        .eq('user_id', user.id);
       
       if (error) {
         console.error('Error removing property:', error);

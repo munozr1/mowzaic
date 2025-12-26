@@ -20,10 +20,11 @@ function Account() {
       if (!user) return;
 
       // Get user data from users table (trigger auto-creates on signup)
+      // user.id is now directly the uuid in users table
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('uid', user.id)
+        .eq('id', user.id)
         .single();
       
       if (error) {
@@ -54,7 +55,7 @@ function Account() {
     setError(null);
 
     try {
-      // Update users table using uid
+      // Update users table using id
       const { error: updateError } = await supabase
         .from('users')
         .update({
@@ -62,7 +63,7 @@ function Account() {
           last_name: formData.last_name,
           phone: formData.phone
         })
-        .eq('uid', user.id);
+        .eq('id', user.id);
 
       if (updateError) {
         throw updateError;

@@ -34,7 +34,7 @@ export const AuthenticationProvider = ({ children }) => {
     const { data, error } = await supabase
       .from('users')
       .select('first_name, last_name, phone')
-      .eq('uid', userId)
+      .eq('id', userId)
       .single();
 
     if (error) {
@@ -91,7 +91,7 @@ export const AuthenticationProvider = ({ children }) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/book',
+        redirectTo: `${import.meta.env.VITE_APP_URL || window.location.origin}/book`,
       },
     });
     
