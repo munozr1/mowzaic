@@ -83,7 +83,10 @@ const AuthModal = ({ isOpen, onClose, mode, onSwitchMode }) => {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
+      // Get the gt parameter to preserve booking data
+      const gt = getParam('gt');
+      const returnUrl = gt ? `/book?gt=${gt}` : '/book';
+      await signInWithGoogle(returnUrl);
       // Note: Google OAuth will redirect, so no need to navigate here
     } catch (err) {
       setError(err.message || 'Google sign in failed');
