@@ -59,6 +59,31 @@ const LandingPage = () => {
             </motion.div>
           </div>
         </div>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 py-6">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <div className="text-sm text-gray-600">
+                © {new Date().getFullYear()} Mowzaic. All rights reserved.
+              </div>
+              <div className="flex space-x-6">
+                <button
+                  onClick={() => navigate('/privacy')}
+                  className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors cursor-pointer bg-transparent border-none"
+                >
+                  Privacy Policy
+                </button>
+                <button
+                  onClick={() => navigate('/terms')}
+                  className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors cursor-pointer bg-transparent border-none"
+                >
+                  Terms of Service
+                </button>
+              </div>
+            </div>
+          </div>
+        </footer>
       </div>
     </>
   );
