@@ -15,13 +15,20 @@ const CheckoutFormContent = ({ onPaymentSuccess }) => {
   const stripe = useStripe();
 
   useEffect(() => {
+    // Wait for Stripe to load before creating checkout session
+    if (!stripe || !token) {
+      return;
+    }
+
     const bookingData = JSON.parse(localStorage.getItem('bookingData'));
     const bookingId = bookingData?.booking?.id || null;
     const propertyId = bookingData?.booking?.property_id || null;
+    
     const createCheckoutSession = async () => {
       try {
+        setProcessing(true);
         const response = await fetch(
-          `${BACKEND_URL}/create-checkout-session`,
+          `${BACKEND_URL}/stripe/create-checkout-session`,
           {
             method: "POST",
             headers: {
@@ -59,8 +66,24 @@ const CheckoutFormContent = ({ onPaymentSuccess }) => {
 
   return (
     <div className="w-full max-w-md mx-auto">
-      {processing && <p>Redirecting to checkout...</p>}
-      {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+      {processing && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#2EB966] mb-4"></div>
+          <p className="text-gray-600">Redirecting to secure checkout...</p>
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+          <p className="font-semibold">Payment Error</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+      {!stripe && !error && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#2EB966] mb-4"></div>
+          <p className="text-gray-600">Loading payment system...</p>
+        </div>
+      )}
     </div>
   );
 };
