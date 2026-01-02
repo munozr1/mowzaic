@@ -8,6 +8,8 @@ import MainContent from '../pages/MainContent';
 import PageLayout from './NavBar';
 import Register from '../pages/Register';
 import Account from '../pages/Account';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
+import TermsOfService from '../pages/TermsOfService';
 
 const Router = () => {
   const { path } = useContext(NavigationContext);
@@ -31,13 +33,17 @@ const Router = () => {
         return <Register />;
       case '/account':
         return <Account />;
+      case '/privacy':
+        return <PrivacyPolicy />;
+      case '/terms':
+        return <TermsOfService />;
       default:
         return <MainContent />;
     }
   };
 
   // If it's the landing page and not authenticated, render without layout
-  if (basePath === '/' && !isAuthenticated) {
+  if ((basePath === '/' || basePath === '/privacy' || basePath === '/terms') && !isAuthenticated) {
     return renderContent();
   }
 
