@@ -1,4 +1,9 @@
 /* eslint-disable no-undef */
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
+
 export const TEST_CONFIG = {
   BASE_URL: process.env.TEST_URL || 'http://localhost:5173',
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3000',
@@ -7,8 +12,8 @@ export const TEST_CONFIG = {
   
   // Test user credentials - load from environment variables for security
   FOREVER_TEST_USER: {
-    email: process.env.FOREVER_TEST_EMAIL || 'test@example.com',
-    password: process.env.FOREVER_TEST_PASSWORD || 'TestPassword123!',
+    email: process.env.FOREVER_TEST_EMAIL,
+    password: process.env.FOREVER_TEST_PASSWORD ,
     firstName: 'Forever',
     lastName: 'Test',
     phone: '5551235670'
@@ -45,6 +50,10 @@ export async function captureScreenshot(page, testName) {
 
 // Utility to find and click button by text
 export async function clickButtonByText(page, text) {
+  if (typeof text !== 'string') {
+    throw new Error(`clickButtonByText expects a string, got ${typeof text}`);
+  }
+  
   await page.evaluate((btnText) => {
     const button = Array.from(document.querySelectorAll('button'))
       .find(btn => btn.textContent.toLowerCase().includes(btnText.toLowerCase()));
@@ -56,8 +65,23 @@ export async function clickButtonByText(page, text) {
   }, text);
 }
 
+export async function clickLinkByText(page, text) {
+  await page.evaluate((linkText) => {
+    const link = Array.from(document.querySelectorAll('a'))
+      .find(a => a.textContent.toLowerCase().includes(linkText.toLowerCase()));
+    if (link) {
+      link.click();
+      return true;
+    }
+    throw new Error(`Link with text "${linkText}" not found`);
+  }, text);
+}
+
 // Utility to wait and clear then type
 export async function typeInField(page, selector, text) {
+  if (!text || typeof text !== 'string') {
+    throw new Error(`typeInField expects a non-empty string, got: ${typeof text} - ${text}`);
+  }
   await page.waitForSelector(selector);
   await page.click(selector, { clickCount: 3 }); // Select all
   await page.keyboard.press('Backspace');

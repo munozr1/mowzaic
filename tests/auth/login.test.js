@@ -57,15 +57,19 @@ async function testLogin() {
         await page.goto(TEST_CONFIG.BASE_URL, { waitUntil: 'networkidle2' });
         
         // Open modal
-        await clickButtonByText(page, 'or sign in to book service');
+        await clickButtonByText(page, 'sign in to book service');
         await page.waitForSelector('input[name="email"]');
         
         // Fill in credentials
         await typeInField(page, 'input[name="email"]', TEST_CONFIG.FOREVER_TEST_USER.email);
         await typeInField(page, 'input[name="password"]', TEST_CONFIG.FOREVER_TEST_USER.password);
+
+        await delay(250);
         
         // Submit form
         await page.click('button[type="submit"]');
+
+        await delay(1000);
         
         // Wait for redirect to /book
         await page.waitForFunction(
@@ -73,8 +77,21 @@ async function testLogin() {
           { timeout: TEST_CONFIG.TIMEOUT.NAVIGATION }
         );
 
-        // Log out after successful login
-        await clickButtonByText(page, 'logout');
+        // Log out after successful login - find the logout button
+        await page.waitForSelector('button', { timeout: 3000 });
+        await page.evaluate(() => {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          const logoutBtn = buttons.find(btn => 
+            btn.textContent.toLowerCase().includes('logout') || 
+            btn.textContent.toLowerCase().includes('log out') ||
+            btn.textContent.toLowerCase().includes('sign out')
+          );
+          if (logoutBtn) {
+            logoutBtn.click();
+          } else {
+            throw new Error('Logout button not found. Available buttons: ' + buttons.map(b => b.textContent).join(', '));
+          }
+        });
         
         // Wait for redirect to landing page
         await page.waitForFunction(
