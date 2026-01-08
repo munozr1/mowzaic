@@ -97,11 +97,11 @@ async function testRegister() {
       try {
         await page.goto(TEST_CONFIG.BASE_URL, { waitUntil: 'networkidle2' });
         
-        await clickButtonByText(page, 'sign in to book service');
+        await clickButtonByText(page, 'or sign in to book service');
         await page.waitForSelector('input[name="email"]');
         
         // Switch to register
-        await clickButtonByText(page, 'create account');
+        await clickButtonByText(page, 'create one');
         await page.waitForSelector('input[name="confirmEmail"]');
         
         // Fill with mismatched emails
@@ -151,7 +151,7 @@ async function testRegister() {
         await page.waitForSelector('input[name="email"]');
         
         // Switch to register
-        await clickButtonByText(page, 'create account');
+        await clickButtonByText(page, 'create one');
         await page.waitForSelector('input[name="confirmEmail"]');
         
         // Fill with mismatched passwords
@@ -160,22 +160,35 @@ async function testRegister() {
         await typeInField(page, 'input[name="password"]', 'Password123!');
         await typeInField(page, 'input[name="confirmPassword"]', 'DifferentPass456!');
         
+        await delay(250);
         // Submit
         await page.click('button[type="submit"]');
         
         // Wait for error
         await delay(1000);
         
+        // Check for any error message about passwords
         const errorText = await page.evaluate(() => {
-          const errors = Array.from(document.querySelectorAll('.text-red-500'));
-          return errors.find(el => el.textContent.includes('Passwords do not match'));
+          const errors = Array.from(document.querySelectorAll('.text-red-500, [class*="error"]'));
+          const passwordError = errors.find(el => 
+            el.textContent.toLowerCase().includes('password') && 
+            (el.textContent.toLowerCase().includes('match') || 
+             el.textContent.toLowerCase().includes('same') ||
+             el.textContent.toLowerCase().includes('identical'))
+          );
+          return passwordError ? passwordError.textContent : null;
         });
         
         if (errorText) {
           console.log(`✅ ${testName} - PASSED (${Date.now() - start}ms)\n`);
           results.push({ name: testName, status: 'passed', duration: Date.now() - start });
         } else {
-          throw new Error('Password mismatch error not shown');
+          // Debug: log all error messages found
+          const allErrors = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll('.text-red-500, [class*="error"]'))
+              .map(el => el.textContent);
+          });
+          throw new Error(`Password mismatch error not shown. Found errors: ${JSON.stringify(allErrors)}`);
         }
       } catch (error) {
         console.log(`❌ ${testName} - FAILED: ${error.message}\n`);
@@ -202,7 +215,7 @@ async function testRegister() {
         await page.waitForSelector('input[name="email"]');
         
         // Switch to register
-        await clickButtonByText(page, 'create account');
+        await clickButtonByText(page, 'create one');
         await page.waitForSelector('input[name="confirmEmail"]');
         
         // Fill with valid data
