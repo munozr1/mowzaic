@@ -1,0 +1,133 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout frontend code
+        uses: actions/checkout@v4
+      
+      - name: Checkout backend code
+        uses: actions/checkout@v4
+        with:
+          repository: munozr1/mowzaic_backend
+          token: ${{ secrets.BACKEND_REPO_PAT }}
+          path: backend
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install frontend dependencies
+        run: npm ci
+      
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+      
+      - name: Create screenshots directory
+        run: mkdir -p screenshots
+      
+      - name: Install Chromium for Puppeteer
+        run: npx puppeteer browsers install chrome
+      
+      - name: Start backend server
+        working-directory: backend
+        env:
+          NODE_ENV: test
+          PORT: 3000
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_TEST_WEBHOOK_SECRET }}
+        run: |
+          npm start &
+          echo $! > ../backend-server.pid
+      
+      - name: Wait for backend to be ready
+        run: npx wait-on http://localhost:3000/health --timeout 60000
+      
+      - name: Start frontend development server
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          VITE_API_URL: http://localhost:3000
+          VITE_MODE: test
+        run: |
+          npm run dev &
+          echo $! > dev-server.pid
+          npx wait-on http://localhost:5173 --timeout 60000
+      
+      - name: Run E2E tests
+        env:
+          TEST_URL: http://localhost:5173
+          BACKEND_URL: http://localhost:3000
+          FOREVER_TEST_EMAIL: ${{ secrets.FOREVER_TEST_EMAIL }}
+          FOREVER_TEST_PASSWORD: ${{ secrets.FOREVER_TEST_PASSWORD }}
+          HEADLESS: true
+        run: npm run test:e2e
+      
+      - name: Stop servers
+        if: always()
+        run: |
+          if [ -f dev-server.pid ]; then
+            kill $(cat dev-server.pid) || true
+            rm dev-server.pid
+          fi
+          if [ -f backend-server.pid ]; then
+            kill $(cat backend-server.pid) || true
+            rm backend-server.pid
+          fi
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.json
+          retention-days: 30
+      
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots
+          path: screenshots/
+          retention-days: 7
+      
+      - name: Comment test results on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('test-results.json', 'utf8'));
+            
+            const body = `## 🧪 E2E Test Results
+            
+            - **Total:** ${results.total}
+            - **✅ Passed:** ${results.passed}
+            - **❌ Failed:** ${results.failed}
+            - **⏱️ Duration:** ${(results.duration / 1000).toFixed(2)}s
+            - **📊 Pass Rate:** ${((results.passed / results.total) * 100).toFixed(1)}%
+            
+            ${results.failed > 0 ? '### Failed Tests:\n' + results.results.filter(r => r.status === 'failed').map(r => `- ❌ ${r.name}: ${r.error}`).join('\n') : '✅ All tests passed!'}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

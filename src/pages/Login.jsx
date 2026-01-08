@@ -238,7 +238,7 @@ const AuthModal = ({ isOpen, onClose, mode, onSwitchMode }) => {
             onClick={() => onSwitchMode(mode === 'login' ? 'register' : 'login')}
             className="text-sm font-medium text-[#2EB966] hover:text-[#2EB966]/80"
           >
-            {mode === 'login' ? 'Create one' : 'Sign in'}
+            {mode === 'login' ? 'create one' : 'sign in'}
           </button>
         </div>
       </div>
