@@ -18,7 +18,7 @@ jobs:
       - name: Checkout backend code
         uses: actions/checkout@v4
         with:
-          repository: munozr1/mowzaic_backend
+          repository: munozr1/mowzaic-backend
           token: ${{ secrets.BACKEND_REPO_PAT }}
           path: backend
       

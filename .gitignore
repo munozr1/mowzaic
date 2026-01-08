@@ -26,3 +26,12 @@ dist-ssr
 # Test artifacts
 test-results.json
 screenshots/*.png
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.test
+.env.production
+.env.development
+.env.test.example
