@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 export const TEST_CONFIG = {
   BASE_URL: process.env.TEST_URL || 'http://localhost:5173',
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3000',
