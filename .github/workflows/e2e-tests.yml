@@ -28,12 +28,17 @@ jobs:
           node-version: '20'
           cache: 'npm'
       
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      
       - name: Install frontend dependencies
         run: npm i && npm ci
       
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: bun install
       
       - name: Create screenshots directory
         run: mkdir -p screenshots
@@ -52,7 +57,7 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_TEST_WEBHOOK_SECRET }}
         run: |
-          npm start &
+          bun run start &
           echo $! > ../backend-server.pid
       
       - name: Wait for backend to be ready
