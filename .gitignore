@@ -34,4 +34,4 @@ screenshots/*.png
 .env.test
 .env.production
 .env.development
-.env.test.example
+!.env.test.example
