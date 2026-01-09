@@ -71,19 +71,6 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel
 
-      - name: Create .env.local with test environment variables
-        run: |
-          cat > .env.local << EOF
-          VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL_TEST }}
-          VITE_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY_TEST }}
-          VITE_API_URL=http://localhost:3000
-          VITE_MODE=test
-          VITE_MAPBOX_TOKEN=${{ secrets.VITE_MAPBOX_TOKEN }}
-          VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
-          VITE_APP_URL=http://localhost:5173
-          EOF
-          cat .env.local
-
       - name: Pull Vercel Environment Information
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
