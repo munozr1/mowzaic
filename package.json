@@ -11,7 +11,8 @@
     "test:e2e": "node tests/runner.js",
     "test:auth": "node tests/auth/login.test.js && node tests/auth/register.test.js",
     "test:login": "node tests/auth/login.test.js",
-    "test:register": "node tests/auth/register.test.js"
+    "test:register": "node tests/auth/register.test.js",
+    "test:secure-cookies": "node tests/auth/secure-cookies.test.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

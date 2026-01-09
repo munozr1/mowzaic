@@ -68,14 +68,27 @@ jobs:
       - name: Wait for backend to be ready
         run: npx wait-on http://localhost:3000/health --timeout 60000
       
-      - name: Start frontend development server
+      - name: Install Vercel CLI
+        run: npm install --global vercel
+
+      - name: Pull Vercel Environment Information
         env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Start frontend development server (Vercel)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
           VITE_API_URL: http://localhost:3000
           VITE_MODE: test
         run: |
-          npm run dev &
+          vercel dev --listen 5173 --yes --token=${{ secrets.VERCEL_TOKEN }} &
           echo $! > dev-server.pid
           npx wait-on http://localhost:5173 --timeout 60000
       
