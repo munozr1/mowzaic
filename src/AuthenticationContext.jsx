@@ -98,11 +98,48 @@ export const AuthenticationProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Initial session load
-    refreshSession().catch(() => {
-      // If initial refresh fails, we are likely not logged in
-      setLoading(false);
-    }).finally(() => setLoading(false));
+    // Handle OAuth callback - extract tokens from URL hash and set cookies
+    const handleOAuthCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const access_token = hashParams.get('access_token');
+      const refresh_token = hashParams.get('refresh_token');
+
+      if (access_token && refresh_token) {
+        try {
+          // Send tokens to serverless function to set HTTP-only cookies
+          const res = await fetch('/api/auth/set-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ access_token, refresh_token }),
+          });
+
+          if (!res.ok) {
+            throw new Error('Failed to set session cookies');
+          }
+
+          // Clear hash from URL
+          window.history.replaceState(null, '', window.location.pathname);
+
+          // Refresh session to load user state
+          await refreshSession();
+        } catch (error) {
+          console.error('OAuth callback error:', error);
+          setLoading(false);
+        }
+        return true;
+      }
+      return false;
+    };
+
+    // Try OAuth callback first
+    handleOAuthCallback().then((wasOAuthCallback) => {
+      if (!wasOAuthCallback) {
+        // Normal session load if not OAuth callback
+        refreshSession().catch(() => {
+          setLoading(false);
+        }).finally(() => setLoading(false));
+      }
+    });
 
     // Refresher interval (refresh every 30 mins or somewhat before expiry)
     // Access tokens usually last 1 hour.
