@@ -5,20 +5,20 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const TEST_CONFIG = {
-  BASE_URL: process.env.TEST_URL || 'http://localhost:5173',
+  BASE_URL: process.env.TEST_URL || 'http://localhost:3000',
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3000',
   HEADLESS: process.env.HEADLESS !== 'false', // Set to false to watch tests run
   SLOW_MO: parseInt(process.env.SLOW_MO || '0'), // Slow down by ms for debugging
-  
+
   // Test user credentials - load from environment variables for security
   FOREVER_TEST_USER: {
     email: process.env.FOREVER_TEST_EMAIL,
-    password: process.env.FOREVER_TEST_PASSWORD ,
+    password: process.env.FOREVER_TEST_PASSWORD,
     firstName: 'Forever',
     lastName: 'Test',
     phone: '5551235670'
   },
-  
+
   // Timeouts
   TIMEOUT: {
     DEFAULT: 5000,
@@ -53,7 +53,7 @@ export async function clickButtonByText(page, text) {
   if (typeof text !== 'string') {
     throw new Error(`clickButtonByText expects a string, got ${typeof text}`);
   }
-  
+
   await page.evaluate((btnText) => {
     const button = Array.from(document.querySelectorAll('button'))
       .find(btn => btn.textContent.toLowerCase().includes(btnText.toLowerCase()));

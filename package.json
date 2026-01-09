@@ -20,6 +20,7 @@
     "@stripe/stripe-js": "^6.0.0",
     "@supabase/supabase-js": "^2.87.1",
     "@tailwindcss/vite": "^4.0.7",
+    "cookie": "^1.1.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.476.0",
     "motion": "^12.4.7",

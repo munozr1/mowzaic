@@ -36,3 +36,5 @@ screenshots/*.png
 .env.development
 .env.test.example
 .env.example
+.vercel
+.env*.local
