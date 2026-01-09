@@ -82,6 +82,7 @@ jobs:
           VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
           VITE_APP_URL=http://localhost:5173
           EOF
+          cat .env.local
 
       - name: Pull Vercel Environment Information
         env:
