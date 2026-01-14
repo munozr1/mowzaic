@@ -13,8 +13,8 @@ export default async function handler(req, res) {
   }
 
   const supabase = createClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.VITE_SUPABASE_ANON_KEY
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
   );
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   // Set refresh token in HttpOnly cookie
   const cookie = serialize('sb-refresh-token', session.refresh_token, {
     httpOnly: true,
-    secure: process.env.VITE_MODE !== 'development', // Secure only in production
+    secure: process.env.MODE !== 'development', // Secure only in production
     sameSite: 'strict',
     maxAge: 60 * 60 * 24 * 7, // 1 week
     path: '/',

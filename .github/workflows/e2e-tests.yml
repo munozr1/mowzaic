@@ -50,11 +50,10 @@ jobs:
         working-directory: backend
         env:
           NODE_ENV: test
-          MODE: development
+          MODE: test
           PORT: 3000
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
@@ -70,6 +69,21 @@ jobs:
       
       - name: Install Vercel CLI
         run: npm install --global vercel
+
+      - name: Create .env.local with test environment variables
+        run: |
+          cat > .env.local << EOF
+          VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL_TEST }}
+          VITE_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          VITE_API_URL=http://localhost:3000
+          VITE_MODE=test
+          VITE_MAPBOX_TOKEN=${{ secrets.VITE_MAPBOX_TOKEN }}
+          VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_APP_URL=http://localhost:5173
+          SUPABASE_URL=${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          MODE=test
+          EOF
 
       - name: Pull Vercel Environment Information
         env:

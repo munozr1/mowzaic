@@ -31,10 +31,10 @@ screenshots/*.png
 .env
 .env.local
 .env.*.local
-.env.test
-.env.production
-.env.development
-.env.test.example
-.env.example
+.env.development.local
+.env.test.local
+.env.production.local
 .vercel
-.env*.local
+
+# Keep these template files in git
+!.env.example
