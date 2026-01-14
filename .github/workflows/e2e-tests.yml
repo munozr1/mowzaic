@@ -49,8 +49,8 @@ jobs:
       - name: Start backend server
         working-directory: backend
         env:
-          NODE_ENV: test
-          MODE: test
+          NODE_ENV: development
+          MODE: development
           PORT: 3000
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL_TEST }}
