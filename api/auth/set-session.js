@@ -14,7 +14,9 @@ export default async function handler(req, res) {
 
     // Verify the access token by getting the user
     const supabase = createClient(
+        // eslint-disable-next-line no-undef
         process.env.SUPABASE_URL,
+        // eslint-disable-next-line no-undef
         process.env.SUPABASE_ANON_KEY
     );
 
@@ -27,6 +29,7 @@ export default async function handler(req, res) {
     // Set refresh token in HttpOnly cookie
     const cookie = serialize('sb-refresh-token', refresh_token, {
         httpOnly: true,
+        // eslint-disable-next-line no-undef
         secure: process.env.MODE !== 'development', // Secure only in production
         sameSite: 'strict',
         maxAge: 60 * 60 * 24 * 7, // 1 week

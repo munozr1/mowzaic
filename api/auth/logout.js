@@ -12,6 +12,7 @@ export default async function handler(req, res) {
     // Even if no token, we want to clear the cookie
     const clearCookie = serialize('sb-refresh-token', '', {
         httpOnly: true,
+        // eslint-disable-next-line no-undef
         secure: process.env.MODE !== 'development',
         sameSite: 'strict',
         maxAge: -1,
@@ -22,7 +23,9 @@ export default async function handler(req, res) {
 
     if (refreshToken) {
         const supabase = createClient(
+          // eslint-disable-next-line no-undef
             process.env.SUPABASE_URL,
+            // eslint-disable-next-line no-undef
             process.env.SUPABASE_ANON_KEY
         );
         // Best effort sign out, though we mainly care about clearing the cookie

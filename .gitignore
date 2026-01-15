@@ -38,3 +38,4 @@ screenshots/*.png
 
 # Keep these template files in git
 !.env.example
+.env*.local
