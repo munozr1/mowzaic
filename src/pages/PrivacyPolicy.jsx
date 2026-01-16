@@ -1,6 +1,7 @@
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white shadow-sm rounded-lg p-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
         <p className="text-sm text-gray-600 mb-8">Last Updated: January 1, 2026</p>
@@ -146,6 +147,28 @@ export default function PrivacyPolicy() {
           </section>
         </div>
       </div>
+      </div>
+
+      <footer className="bg-white border-t border-gray-200 py-6">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div className="text-sm text-gray-600">
+              © {new Date().getFullYear()} Mowzaic. All rights reserved.
+            </div>
+            <div className="flex space-x-6">
+              <a href="/privacy" className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors">
+                Privacy Policy
+              </a>
+              <a href="/terms" className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors">
+                Terms of Service
+              </a>
+              <a href="/faq" className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors">
+                FAQ
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

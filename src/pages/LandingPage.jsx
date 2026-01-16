@@ -80,6 +80,12 @@ const LandingPage = () => {
                 >
                   Terms of Service
                 </button>
+                <button
+                  onClick={() => navigate('/faq')}
+                  className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors cursor-pointer bg-transparent border-none"
+                >
+                  FAQ
+                </button>
               </div>
             </div>
           </div>
