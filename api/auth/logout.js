@@ -24,9 +24,9 @@ export default async function handler(req, res) {
     if (refreshToken) {
         const supabase = createClient(
           // eslint-disable-next-line no-undef
-            process.env.SUPABASE_URL,
+            process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL,
             // eslint-disable-next-line no-undef
-            process.env.SUPABASE_ANON_KEY
+            process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
         );
         // Best effort sign out, though we mainly care about clearing the cookie
         await supabase.auth.signOut();
