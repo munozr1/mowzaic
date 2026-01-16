@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const TEST_CONFIG = {
-  BASE_URL: process.env.TEST_URL || 'http://localhost:3000',
+  BASE_URL: process.env.TEST_URL || 'http://localhost:3001',
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3000',
   HEADLESS: process.env.HEADLESS !== 'false', // Set to false to watch tests run
   SLOW_MO: parseInt(process.env.SLOW_MO || '0'), // Slow down by ms for debugging
