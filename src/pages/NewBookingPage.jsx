@@ -9,6 +9,8 @@ import { fullAddress, encodeJson, getParam } from '../utils';
 import CheckoutForm from '../components/CheckoutForm';
 import BookingStatus from '../components/BookingStatus';
 import { BACKEND_URL } from '../constants';
+import { TARGET_CITIES } from '../constants/serviceAreas';
+import { toast, Toaster } from "sonner";
 
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
@@ -27,9 +29,44 @@ function NewBookingPage() {
 		}
 	}, []);
 
+	const trackDemand = async (status, formData) => {
+		try {
+			const fullAddr = fullAddress(formData.selectedAddress);
+			await fetch('/api/track-demand', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					status,
+					address: fullAddr,
+					city: formData.selectedAddress.city,
+					state: formData.selectedAddress.state,
+					postal: formData.selectedAddress.postal,
+					phone: formData.phoneNumber,
+					privacyAgreement: formData.privacyAgreement,
+					marketingConsent: formData.marketingConsent
+				})
+			});
+		} catch (err) {
+			console.error("Failed to track demand", err);
+		}
+	};
+
 	const handleFormSubmit = async (formData) => {
+		// 1. Check City Eligibility (Waitlist Gate)
+		const city = formData.selectedAddress.city;
+		const normalizedCity = city?.trim().toLowerCase();
+		const isTargetCity = TARGET_CITIES.some(c => c.toLowerCase() === normalizedCity);
+
+		if (!isTargetCity) {
+			// This is a Dallas County resident who is NOT in Mesquite/Garland.
+			// We track them as waitlisted (now capturing phone #) and stop the booking.
+			toast.info(`We waitlisted you! We are coming to ${city} soon!`);
+			await trackDemand('waitlisted', formData);
+			return; // Stop execution, do not proceed to booking/checkout
+		}
+
 		if (!isAuthenticated) {
-			
+
 			// Ensure codes are properly formatted before encoding
 			const formDataWithCleanCodes = {
 				...formData,
@@ -38,7 +75,7 @@ function NewBookingPage() {
 					code: code.code || ""
 				}))
 			};
-			
+
 			const encodedData = encodeJson(formDataWithCleanCodes);
 			// Store the data and open login modal instead of navigating
 			navigate(window.location.pathname, { gt: encodedData });
@@ -52,7 +89,7 @@ function NewBookingPage() {
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${token}`
 				},
-				body: JSON.stringify({...formData, userId: user.id, fullAddress: fullAddress(formData.selectedAddress)})
+				body: JSON.stringify({ ...formData, userId: user.id, fullAddress: fullAddress(formData.selectedAddress) })
 			});
 
 
@@ -66,10 +103,13 @@ function NewBookingPage() {
 			console.log(bookingResult);
 
 			localStorage.setItem('bookingData', JSON.stringify(bookingResult));
-			
+
 			// Move to checkout state instead of thank-you
 			setBookingState('checkout');
-			
+
+			// Track successful booking
+			await trackDemand('accepted_booked', formData);
+
 		} catch (error) {
 			window.scrollTo(0, 0);
 			console.error('Error submitting booking:', error);
@@ -85,10 +125,10 @@ function NewBookingPage() {
 	};
 
 	const renderBookingState = () => {
-		switch(bookingState) {
+		switch (bookingState) {
 			case 'fill-form':
 				return (
-					<motion.div 
+					<motion.div
 						id="booking-form-container"
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -111,8 +151,8 @@ function NewBookingPage() {
 						transition={{ duration: 0.6 }}
 						className="w-[100vw] lg:w-[100%] overflow-hidden items-center px-2 place-items-enter self-center"
 					>
-						<CheckoutForm 
-							onPaymentSuccess={handlePaymentSuccess} 
+						<CheckoutForm
+							onPaymentSuccess={handlePaymentSuccess}
 						/>
 					</motion.div>
 				);
@@ -127,6 +167,7 @@ function NewBookingPage() {
 
 	return (
 		<div className="bg-white min-h-[100vh] flex flex-col place-items-enter">
+			<Toaster position="top-center" />
 			{renderBookingState()}
 		</div>
 	);

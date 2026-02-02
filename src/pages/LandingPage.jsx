@@ -1,22 +1,81 @@
-import { MapPin} from "lucide-react";
+import { MapPin } from "lucide-react";
 import { motion } from "motion/react";
 import AddressAutofillBar from "../components/AddressAutofillBar";
 import { useLoginModal } from "../LoginModalContext";
 import { encodeJson } from "../utils";
 import { useNavigation } from "../NavigationContext";
+import { SERVICE_AREAS, TARGET_CITIES, TARGET_STATE, TARGET_STATE_CODE } from "../constants/serviceAreas";
+import { toast, Toaster } from "sonner";
 
 const LandingPage = () => {
-  const { navigate } =  useNavigation();
+  const { navigate } = useNavigation();
   const { openLoginModal } = useLoginModal();
-  const handleSubmit = (place) => {
-    // Handle address submission here - typically would redirect to main app
-    const encodedData = encodeJson({selectedAddress: place})
+
+  const trackDemand = async (status, place) => {
+    try {
+      await fetch('/api/track-demand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          address: place.address,
+          city: place.city,
+          state: place.state,
+          postal: place.postal,
+          phone: null
+        })
+      });
+    } catch (err) {
+      console.error("Failed to track demand", err);
+    }
+  };
+
+  const handleSubmit = async (place) => {
+    // AddressAutofillBar returns a simplified object with these properties
+    const stateName = place.state;
+    const city = place.city;
+    const postal = place.postal;
+
+    // 1. State Check (Robustness: Case insensitive)
+    const normalizedStateName = stateName?.trim().toLowerCase();
+    const normalizedTargetState = TARGET_STATE.toLowerCase();
+    const normalizedTargetCode = TARGET_STATE_CODE.toLowerCase();
+
+    if (normalizedStateName !== normalizedTargetState && normalizedStateName !== normalizedTargetCode) {
+      toast.info("We waitlisted you! We currently only service Texas residents.");
+      await trackDemand("rejected_out_of_state", place);
+      return;
+    }
+
+    // 2. County Check
+    // This check validates if the postal code is in our list of Dallas County postal codes.
+    const isPostalInServiceArea = SERVICE_AREAS.some(area => area.postalCodes.includes(postal));
+
+    if (!isPostalInServiceArea) {
+      toast.info("We waitlisted you! We currently only service Dallas County residents.");
+      await trackDemand("rejected_out_of_county", place);
+      return;
+    }
+
+    // 3. City Check - REMOVED
+    // We now allow all Dallas County residents to proceed to the booking page
+    // so we can capture their phone number before waitlisting them if they are not in target cities.
+
+    // 4. Success (Proceed to booking)
+    // We track this as 'proceed_to_book' to differentiate from 'accepted_no_book' if we want,
+    // or keep 'accepted_no_book' as "passed landing page validation".
+    // Let's use 'proceed_to_book' for clarity in logs, or just 'accepted_no_book' to mean "allowed to book".
+    // Given the requirement "allow user to continue", this is effectively an acceptance at this stage.
+    await trackDemand("accepted_no_book", place);
+
+    const encodedData = encodeJson({ selectedAddress: place })
     localStorage.setItem('hasVisited', 'true')
-    navigate('/book', {gt: encodedData})
+    navigate('/book', { gt: encodedData })
   };
 
   return (
     <>
+      <Toaster duration={10000} position="top-center" />
       <div className="bg-[#f0fdf4] antialiased min-h-[100vh] flex flex-col">
         {/* Hero Section */}
         <div className="flex-1">
@@ -25,33 +84,25 @@ const LandingPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="max-w-xl  "
+              className="max-w-xl w-full"
             >
               <h2 className="text-5xl md:text-7xl font-bold text-[#14532d] text-center mb-6 tracking-tight">
                 mow delivered, <br />
                 <span className="text-[#22c55e]">just like that</span>
               </h2>
 
-              <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-2">
+              <div className="flex flex-col space-y-4">
                 <div className="p-[0.5rem] shadow-lg flex-1 bg-white rounded-md flex items-center ">
                   <div className="px-4">
                     <MapPin className="h-5 w-5 text-gray-400" />
                   </div>
                   <AddressAutofillBar onSelect={handleSubmit} />
                 </div>
-
-                {/* <button
-                  type="button"
-                  className="shadow-lg md:w-auto bg-[#2EB966] hover:bg-[#2EB966]/90 text-white font-bold py-4 px-8 rounded-md flex items-center justify-center"
-                  onClick={handleSubmit}
-                >
-                  <Search className="h-5 w-5 mr-2" />
-                </button> */}
               </div>
-              <div className="mt-4">
+              <div className="mt-4 text-center">
                 <button
                   onClick={() => openLoginModal()}
-                  className="hover:underline text-sm cursor-pointer bg-transparent border-none"
+                  className="hover:underline text-sm cursor-pointer bg-transparent border-none text-[#14532d]"
                 >
                   or sign in to book service
                 </button>

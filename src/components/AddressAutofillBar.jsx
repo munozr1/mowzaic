@@ -14,12 +14,12 @@ const AddressAutofillBar = ({ onSelect, initialAddress }) => {
     if (initialAddress?.address) {
       setQuery(
         initialAddress.address +
-          " " +
-          initialAddress.city +
-          ", " +
-          initialAddress.state +
-          ", " +
-          initialAddress.postal
+        " " +
+        initialAddress.city +
+        ", " +
+        initialAddress.state +
+        ", " +
+        initialAddress.postal
       );
     }
     // Only request geolocation when user interacts, not automatically
@@ -80,6 +80,7 @@ const AddressAutofillBar = ({ onSelect, initialAddress }) => {
     setSuggestions([]);
     setOpen(false);
     onSelect(extractAddressDetails(place));
+    console.log(JSON.stringify(place));
   };
 
   // Close on Escape

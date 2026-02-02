@@ -15,14 +15,14 @@ export function decodeJson(encodedString) {
 }
 
 
-export function getParam(param){
-	const queryString = window.location.search;
-	const params = new URLSearchParams(queryString);
-	return params.get(param)
+export function getParam(param) {
+  const queryString = window.location.search;
+  const params = new URLSearchParams(queryString);
+  return params.get(param)
 }
 
 export function fullAddress(address) {
-  return `${address.address}, ${address.city}, ${address.state} ${address.zip}`;
+  return `${address.address}, ${address.city}, ${address.state} ${address.postal}`;
 }
 
 export function findAddress(addresses, address) {

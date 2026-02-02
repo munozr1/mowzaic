@@ -11,12 +11,12 @@ import { BACKEND_URL } from "../constants";
 import { useAuthentication } from "../AuthenticationContext";
 
 function gen14days() {
-  const today = new Date();  
-  const availability = Array.from({ length: 14 }, (_, i) => {  
-    let date = new Date();  
+  const today = new Date();
+  const availability = Array.from({ length: 14 }, (_, i) => {
+    let date = new Date();
     date.setDate(today.getDate() + i + 1); // Start from tomorrow  
-    return date.toISOString();  
-  });  
+    return date.toISOString();
+  });
   return availability;
 }
 
@@ -68,7 +68,7 @@ const BookingFormDetails = ({ onSubmit }) => {
       if (savedData.selectedDate) setSelectedDate(savedData.selectedDate);
       if (savedData.timeSlot !== undefined) setTimeSlot(savedData.timeSlot);
       if (savedData.selectedOptions) setSelectedOptions(savedData.selectedOptions);
-      
+
       // Handle access codes properly
       if (savedData.codes && savedData.codes.length > 0) {
         const formattedCodes = savedData.codes.map((code, index) => ({
@@ -78,20 +78,20 @@ const BookingFormDetails = ({ onSubmit }) => {
         }));
         setAccessCodes(formattedCodes);
       }
-      
+
       // Restore form values
       if (savedData.phoneNumber) setValue('phoneNumber', savedData.phoneNumber);
       if (savedData.preferredContact) setValue('preferredContact', savedData.preferredContact);
       if (savedData.hasPets !== undefined) setValue('hasPets', savedData.hasPets);
       if (savedData.message) setValue('message', savedData.message);
-    } 
+    }
 
   }, [setValue]);
 
   const handleChangeAddress = (data) => {
     setSelectedAddress(data);
   };
-  
+
   const handleSelectBookingDate = (data) => {
     setSelectedDate(data);
     const id = `day-${data.id}`;
@@ -99,8 +99,8 @@ const BookingFormDetails = ({ onSubmit }) => {
   };
 
   const handleAccessCodeChange = (id, field, value) => {
-    setAccessCodes(prevCodes => 
-      prevCodes.map(code => 
+    setAccessCodes(prevCodes =>
+      prevCodes.map(code =>
         code.id === id ? { ...code, [field]: value } : code
       )
     );
@@ -114,7 +114,7 @@ const BookingFormDetails = ({ onSubmit }) => {
     } else {
       document.getElementById("choose-address-message").classList.add('hidden');
     }
-    
+
     if (!selectedDate.id) {
       const dateErr = document.getElementById("choose-date-message");
       dateErr.classList.remove("hidden");
@@ -126,23 +126,27 @@ const BookingFormDetails = ({ onSubmit }) => {
     setIsSubmitting(true);
 
     try {
+      // Implicit consent via button click per new requirement
       await onSubmit({
         ...data,
         codes: accessCodes,
         selectedOptions,
         selectedAddress,
         selectedDate,
-        timeSlot
+        timeSlot,
+        privacyAgreement: true,
+        marketingConsent: true
       });
     } catch (error) {
       console.error('Error submitting booking:', error);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
   const toggleOptions = (op) => {
     let newOptions = [...selectedOptions];
-    
+
     // Handle mutual exclusivity between call and text options
     if (op === 'call on arrival') {
       // If selecting call, remove text if present
@@ -163,7 +167,7 @@ const BookingFormDetails = ({ onSubmit }) => {
   };
 
   const addAccessCode = () => {
-    if(accessCodes.length >= 5) return;
+    if (accessCodes.length >= 5) return;
     setAccessCodes((prevCodes) => [
       ...prevCodes,
       { id: prevCodes.length + 1, label: "", code: "" },
@@ -176,7 +180,7 @@ const BookingFormDetails = ({ onSubmit }) => {
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] py-12">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, delay: 0.3 }}
@@ -195,13 +199,13 @@ const BookingFormDetails = ({ onSubmit }) => {
           <AddressAutofillBar initialAddress={selectedAddress} onSelect={handleChangeAddress} />
         </div>
         <p className="text-red-500 text-center hidden" id="choose-address-message">* please select an address</p>
-        
+
         <div className="mt-5">
           <h2 className="text-sm font-medium text-gray-700 mb-2">select date of service</h2>
           <div className="border border-gray-300 rounded-lg overflow-x-auto no-scrollbar">
             <div className="flex">
               {availability.map((d, index) => (
-                <DayCard 
+                <DayCard
                   key={index}
                   idx={index}
                   day={new Date(d)}
@@ -222,11 +226,10 @@ const BookingFormDetails = ({ onSubmit }) => {
               type="button"
               onClick={() => setTimeSlot(index)}
               disabled={isSubmitting}
-              className={`mr-5 mb-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                timeSlot === index
-                  ? "bg-[#2EB966] text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`mr-5 mb-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${timeSlot === index
+                ? "bg-[#2EB966] text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {slot}
             </button>
@@ -292,10 +295,10 @@ const BookingFormDetails = ({ onSubmit }) => {
               autoComplete="off"
               inputMode="numeric"
               disabled={isSubmitting}
-              {...register("phoneNumber", { 
-                required: true, 
+              {...register("phoneNumber", {
+                required: true,
                 pattern: {
-                  message: "Enter valid phone number", 
+                  message: "Enter valid phone number",
                   value: /^[0-9]{10}$/
                 }
               })}
@@ -311,14 +314,14 @@ const BookingFormDetails = ({ onSubmit }) => {
               access codes (if any)
             </p>
             {accessCodes.map((code) => (
-              <AccessCode 
-                key={code.id} 
-                index={code.id} 
+              <AccessCode
+                key={code.id}
+                index={code.id}
                 initialLabel={code.label}
                 initialCode={code.code}
                 onChange={handleAccessCodeChange}
-                onDelete={removeAccessCode} 
-                isSubmitting={isSubmitting} 
+                onDelete={removeAccessCode}
+                isSubmitting={isSubmitting}
               />
             ))}
             <button
@@ -341,11 +344,10 @@ const BookingFormDetails = ({ onSubmit }) => {
                 type="button"
                 onClick={() => toggleOptions(op)}
                 disabled={isSubmitting}
-                className={`hover:cursor-pointer mr-5 mb-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  selectedOptions.includes(op) 
-                    ? "bg-[#2EB966] text-white" 
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`hover:cursor-pointer mr-5 mb-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedOptions.includes(op)
+                  ? "bg-[#2EB966] text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {op}
               </button>
@@ -372,20 +374,29 @@ const BookingFormDetails = ({ onSubmit }) => {
           </div>
 
           {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full px-6 py-3 text-white bg-[#2EB966] rounded-md hover:bg-[#2EB966]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2EB966] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              'Book Now'
-            )}
-          </button>
+          <div className="space-y-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full px-6 py-3 text-white bg-[#2EB966] rounded-md hover:bg-[#2EB966]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2EB966] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Book Now'
+              )}
+            </button>
+
+            {/* Implicit Consent Disclaimer */}
+            <p className="text-xs text-gray-500 text-center leading-tight">
+              By clicking Book Now, you agree to our <a href="/terms" className="text-[#2EB966] hover:underline" target="_blank">Terms of Service</a> and <a href="/privacy" className="text-[#2EB966] hover:underline" target="_blank">Privacy Policy</a>.
+              You consent to receive automated SMS updates regarding service availability in your area.
+              Consent is not a condition of purchase. Msg & data rates may apply. Reply STOP to opt out.
+            </p>
+          </div>
         </form>
       </motion.div>
     </div>
