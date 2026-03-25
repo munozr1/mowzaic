@@ -123,7 +123,19 @@ export const AuthenticationProvider = ({ children }) => {
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
 
           // Refresh session to load user state
-          await refreshSession();
+          const newSession = await refreshSession();
+
+          // Google OAuth doesn't support custom metadata like signUp does,
+          // so if this callback landed on a /provider path, set role to 'provider'
+          if (newSession?.user && window.location.pathname.startsWith('/provider')) {
+            const { error: roleError } = await supabase
+              .from('users')
+              .update({ role: 'provider' })
+              .eq('id', newSession.user.id);
+            if (!roleError) {
+              setUserRole('provider');
+            }
+          }
         } catch (error) {
           console.error('OAuth callback error:', error);
           setLoading(false);
