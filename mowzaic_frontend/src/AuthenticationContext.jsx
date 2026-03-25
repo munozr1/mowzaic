@@ -26,6 +26,7 @@ export const AuthenticationProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
+  const [userRole, setUserRole] = useState(null);
 
   // Configure Supabase client for in-memory storage only
   useEffect(() => {
@@ -35,13 +36,13 @@ export const AuthenticationProvider = ({ children }) => {
     }
   }, []);
 
-  // Check if user profile is complete
+  // Check if user profile is complete and fetch role
   const checkProfileCompletion = async (userId) => {
     if (!userId) return;
 
     const { data, error } = await supabase
       .from('users')
-      .select('first_name, last_name, phone')
+      .select('first_name, last_name, phone, role')
       .eq('id', userId)
       .single();
 
@@ -53,6 +54,7 @@ export const AuthenticationProvider = ({ children }) => {
     // Profile is incomplete if any required field is missing or empty
     const isIncomplete = !data?.first_name || !data?.last_name || !data?.phone;
     setNeedsProfileCompletion(isIncomplete);
+    setUserRole(data?.role || 'user');
   };
 
   const refreshSession = async () => {
@@ -241,6 +243,7 @@ export const AuthenticationProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     setNeedsProfileCompletion(false);
+    setUserRole(null);
   };
 
 
@@ -252,6 +255,7 @@ export const AuthenticationProvider = ({ children }) => {
     loading,
     needsProfileCompletion,
     checkProfileCompletion,
+    userRole,
     login,
     signInWithGoogle,
     register,
