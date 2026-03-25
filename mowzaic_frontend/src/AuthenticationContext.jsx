@@ -118,7 +118,7 @@ export const AuthenticationProvider = ({ children }) => {
           }
 
           // Clear hash from URL
-          window.history.replaceState(null, '', window.location.pathname);
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
 
           // Refresh session to load user state
           await refreshSession();
