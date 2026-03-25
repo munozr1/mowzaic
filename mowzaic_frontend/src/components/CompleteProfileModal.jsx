@@ -49,7 +49,13 @@ const CompleteProfileModal = ({ isOpen, onComplete }) => {
       onComplete();
     } catch (err) {
       console.error('Error updating profile:', err);
-      setError(err.message || 'Failed to update profile');
+      if (err.message?.includes('users_phone_key')) {
+        setError('This phone number is already in use. Please try a different number.');
+      } else if (err.message?.includes('users_email_key')) {
+        setError('This email is already in use.');
+      } else {
+        setError(err.message || 'Failed to update profile. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
