@@ -1,0 +1,16 @@
+{
+  "name": "mowzaic-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Mowzaic monorepo — frontend and backend",
+  "scripts": {
+    "dev:frontend": "npm --prefix mowzaic_frontend run dev",
+    "dev:backend": "npm --prefix mowzaic_backend run dev",
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "start:backend": "npm --prefix mowzaic_backend run start",
+    "build:frontend": "npm --prefix mowzaic_frontend run build",
+    "install:all": "npm --prefix mowzaic_frontend install && npm --prefix mowzaic_backend install",
+    "lint:frontend": "npm --prefix mowzaic_frontend run lint",
+    "lint:backend": "npm --prefix mowzaic_backend run lint"
+  }
+}

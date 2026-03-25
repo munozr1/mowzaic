@@ -1,0 +1,51 @@
+{
+  "name": "mowzaic",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "test:e2e": "node tests/runner.js",
+    "test:auth": "node tests/auth/login.test.js && node tests/auth/register.test.js",
+    "test:login": "node tests/auth/login.test.js",
+    "test:register": "node tests/auth/register.test.js",
+    "test:secure-cookies": "node tests/auth/secure-cookies.test.js",
+    "test:demand": "node tests/demand-tracking.test.js"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@mapbox/search-js-react": "^1.0.0",
+    "@stripe/react-stripe-js": "^3.4.0",
+    "@stripe/stripe-js": "^6.0.0",
+    "@supabase/supabase-js": "^2.87.1",
+    "@tailwindcss/vite": "^4.0.7",
+    "cookie": "^1.1.1",
+    "jwt-decode": "^4.0.0",
+    "lucide-react": "^0.476.0",
+    "motion": "^12.4.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.2",
+    "react-router-dom": "^7.5.3",
+    "sonner": "^2.0.7",
+    "tailwindcss": "^4.0.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.19.0",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.18",
+    "globals": "^15.14.0",
+    "puppeteer": "^23.11.1",
+    "vite": "^6.1.0",
+    "wait-on": "^8.0.1"
+  }
+}
