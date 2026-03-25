@@ -1,44 +1,41 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Home, UserCircle, Newspaper } from "lucide-react";
+import { Menu, X, Home, UserCircle, CalendarPlus, LogOut, ChevronRight } from "lucide-react";
 import { useNavigation } from "../NavigationContext";
 import { useAuthentication } from "../AuthenticationContext";
 import PropTypes from "prop-types";
 
+const PAGE_TITLES = {
+  "/book": "New Booking",
+  "/manage": "Manage Properties",
+  "/account": "Account",
+};
 
 const PageLayout = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const {isAuthenticated, logout} = useAuthentication();
-  const {path, navigate} = useNavigation();
+  const { isAuthenticated, logout, user } = useAuthentication();
+  const { path, navigate } = useNavigation();
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate("/");
   };
 
-  // Check if mobile on mount and when window resizes
   useEffect(() => {
     const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setIsOpen(false);
-      } else {
-        setIsOpen(true);
-      }
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setIsOpen(false);
     };
 
     checkIfMobile();
     window.addEventListener("resize", checkIfMobile);
-    
-    return () => {
-      window.removeEventListener("resize", checkIfMobile);
-    };
+    return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
-
   const navigationItems = [
-    { icon: Newspaper, name: "New Booking", path: "/book" },
-    { icon: Home, name: "Manage Properites", path: "/manage" },
+    { icon: CalendarPlus, name: "New Booking", path: "/book" },
+    { icon: Home, name: "Properties", path: "/manage" },
     { icon: UserCircle, name: "Account", path: "/account" },
   ];
 
@@ -46,88 +43,115 @@ const PageLayout = ({ children }) => {
     return <div className="min-h-screen bg-gray-50">{children}</div>;
   }
 
+  const pageTitle = PAGE_TITLES[path] || "Dashboard";
+  const userInitial = user?.email ? user.email[0].toUpperCase() : "U";
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar Navigation */}
-      <div
-        className={
-          `fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out md:static md:translate-x-0
-          ${isOpen ? "translate-x-0" : "-translate-x-full"}`
-        }
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-        <div className="flex h-16 items-center justify-between px-4 border-b">
-          <h2 className="text-xl font-bold text-[#2EB966]">mowzaic</h2>
+        {/* Logo */}
+        <div className="flex h-14 items-center justify-between px-5 border-b border-gray-200">
+          <button
+            onClick={() => navigate("/book")}
+            className="text-lg font-bold tracking-tight text-gray-900 hover:opacity-80 transition-opacity"
+          >
+            mowzaic
+          </button>
           {isMobile && (
             <button
               onClick={() => setIsOpen(false)}
-              className="p-2 rounded-md text-gray-500 hover:text-gray-700 md:hidden"
+              className="rounded-md p-1 text-gray-400 hover:text-gray-600 md:hidden"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
           )}
         </div>
-        
-        <nav className="flex-1 space-y-1 px-2 py-4">
+
+        {/* Nav links */}
+        <nav className="flex-1 px-3 py-3 space-y-0.5">
           {navigationItems.map((item) => {
             const isActive = path === item.path;
-            
             return (
-              <a
+              <button
                 key={item.name}
-                onClick={() => navigate(item.path)}
-                className={
-                  `hover:cursor-pointer flex items-center px-4 py-3 rounded-md text-sm font-medium transition-colors
-                  ${isActive? "bg-[#2EB966] text-white": "text-gray-600 hover:bg-gray-100"}`
-                }
+                onClick={() => {
+                  navigate(item.path);
+                  if (isMobile) setIsOpen(false);
+                }}
+                className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
-                <item.icon className="mr-3 h-5 w-5" />
+                <item.icon
+                  size={18}
+                  strokeWidth={isActive ? 2 : 1.75}
+                  className={
+                    isActive
+                      ? "text-emerald-600"
+                      : "text-gray-400 group-hover:text-gray-600"
+                  }
+                />
                 {item.name}
-              </a>
+                {isActive && (
+                  <ChevronRight size={14} className="ml-auto text-emerald-400" />
+                )}
+              </button>
             );
           })}
         </nav>
-      </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1">
-        {/* Header */}
-        <header className="sticky top-0 z-40 flex h-16 items-center bg-white shadow-sm">
+        {/* User section at bottom */}
+        <div className="border-t border-gray-200 p-3">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">
+              {userInitial}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-gray-900">
+                {user?.email}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+          >
+            <LogOut size={16} />
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Top bar */}
+        <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-gray-200 bg-white px-4 md:px-6">
           {isMobile && (
             <button
               onClick={() => setIsOpen(true)}
-              className="p-4 text-gray-500 hover:text-gray-700 md:hidden"
+              className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 md:hidden"
             >
-              <Menu size={24} />
+              <Menu size={20} />
             </button>
           )}
-          
-          <div className="flex flex-1 items-center justify-center">
-          </div>
-          
-          <div className="px-4">
-            {
-              !isAuthenticated ?
-              <button onClick={() => navigate('/login')} className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
-              login
-            </button>
-            :
-            <button onClick={handleLogout} className="text-sm font-medium text-gray-700 hover:text-[#2EB966]">
-              logout
-            </button>
-            }
-          </div>
+          <h1 className="text-base font-semibold text-gray-900">{pageTitle}</h1>
         </header>
 
-        {/* Page Content */}
-        <main className="p-0 md:p-0">
-          {children}
-        </main>
+        {/* Page content */}
+        <main className="flex-1">{children}</main>
       </div>
 
-      {/* Mobile Overlay */}
+      {/* Mobile overlay */}
       {isOpen && isMobile && (
-        <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 md:hidden"
+        <div
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -135,11 +159,8 @@ const PageLayout = ({ children }) => {
   );
 };
 
-
 PageLayout.propTypes = {
-	children: PropTypes.node.isRequired,
-}
-
-
+  children: PropTypes.node.isRequired,
+};
 
 export default PageLayout;
