@@ -1,19 +1,24 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Home, UserCircle, CalendarPlus, LogOut, ChevronRight } from "lucide-react";
+import { Menu, X, Home, UserCircle, CalendarPlus, LogOut, ChevronRight, LayoutDashboard } from "lucide-react";
 import { useNavigation } from "../NavigationContext";
 import { useAuthentication } from "../AuthenticationContext";
 import PropTypes from "prop-types";
 
-const PAGE_TITLES = {
+const CLIENT_PAGE_TITLES = {
   "/book": "New Booking",
   "/manage": "Manage Properties",
+  "/account": "Account",
+};
+
+const PROVIDER_PAGE_TITLES = {
+  "/provider/dashboard": "Dashboard",
   "/account": "Account",
 };
 
 const PageLayout = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const { isAuthenticated, logout, user } = useAuthentication();
+  const { isAuthenticated, logout, user, userRole } = useAuthentication();
   const { path, navigate } = useNavigation();
 
   const handleLogout = async () => {
@@ -33,18 +38,29 @@ const PageLayout = ({ children }) => {
     return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
-  const navigationItems = [
+  const isProvider = userRole === 'provider';
+
+  const clientNavigationItems = [
     { icon: CalendarPlus, name: "New Booking", path: "/book" },
     { icon: Home, name: "Properties", path: "/manage" },
     { icon: UserCircle, name: "Account", path: "/account" },
   ];
 
+  const providerNavigationItems = [
+    { icon: LayoutDashboard, name: "Dashboard", path: "/provider/dashboard" },
+    { icon: UserCircle, name: "Account", path: "/account" },
+  ];
+
+  const navigationItems = isProvider ? providerNavigationItems : clientNavigationItems;
+  const pageTitles = isProvider ? PROVIDER_PAGE_TITLES : CLIENT_PAGE_TITLES;
+
   if (!isAuthenticated) {
     return <div className="min-h-screen bg-gray-50">{children}</div>;
   }
 
-  const pageTitle = PAGE_TITLES[path] || "Dashboard";
+  const pageTitle = pageTitles[path] || "Dashboard";
   const userInitial = user?.email ? user.email[0].toUpperCase() : "U";
+  const defaultPath = isProvider ? "/provider/dashboard" : "/book";
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -57,11 +73,16 @@ const PageLayout = ({ children }) => {
         {/* Logo */}
         <div className="flex h-14 items-center justify-between px-5 border-b border-gray-200">
           <button
-            onClick={() => navigate("/book")}
+            onClick={() => navigate(defaultPath)}
             className="text-lg font-bold tracking-tight text-gray-900 hover:opacity-80 transition-opacity"
           >
             mowzaic
           </button>
+          {isProvider && (
+            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+              provider
+            </span>
+          )}
           {isMobile && (
             <button
               onClick={() => setIsOpen(false)}

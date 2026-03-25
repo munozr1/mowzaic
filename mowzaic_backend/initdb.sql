@@ -8,6 +8,8 @@
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users CASCADE;
 DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.create_full_booking_transaction(integer,uuid,timestamp without time zone,text) CASCADE;
+DROP FUNCTION IF EXISTS public.create_full_booking_transaction(uuid,uuid,timestamp without time zone,text) CASCADE;
+DROP FUNCTION IF EXISTS public.create_full_booking_transaction(uuid,uuid,timestamp without time zone,text,uuid) CASCADE;
 DROP TABLE IF EXISTS public.bookings CASCADE;
 DROP TABLE IF EXISTS public.estimates CASCADE;
 DROP TABLE IF EXISTS public.events CASCADE;
@@ -289,10 +291,24 @@ RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  _role public.user_role;
 BEGIN
+  -- Read role from user metadata if provided (e.g., provider registration)
+  -- Default to 'user' if not specified or invalid
+  BEGIN
+    _role := (NEW.raw_user_meta_data->>'role')::public.user_role;
+  EXCEPTION WHEN OTHERS THEN
+    _role := 'user';
+  END;
+
+  IF _role IS NULL THEN
+    _role := 'user';
+  END IF;
+
   -- If a new auth user is created, insert into public.users using same uuid
-  INSERT INTO public.users (id, email, source, password)
-  VALUES (NEW.id, NEW.email, 'auth', 'oauth')
+  INSERT INTO public.users (id, email, source, password, role)
+  VALUES (NEW.id, NEW.email, 'auth', 'oauth', _role)
   ON CONFLICT (id) DO NOTHING;
 
   RETURN NEW;
@@ -372,11 +388,13 @@ $$;
 
 -- Function: create_full_booking_transaction
 -- Creates estimate, subscription, message, and booking atomically
+-- p_provider_id is optional - set by frontend based on which company site the customer booked from
 CREATE OR REPLACE FUNCTION public.create_full_booking_transaction(
     p_user_id uuid,
     p_property_id uuid,
     p_date_of_service timestamp,
-    p_message text
+    p_message text,
+    p_provider_id uuid DEFAULT NULL
 )
 RETURNS json
 LANGUAGE plpgsql
@@ -429,7 +447,7 @@ BEGIN
         new_message_id,
         'scheduled',
         'pending',
-        NULL
+        p_provider_id
     )
     RETURNING * INTO new_booking_record;
 

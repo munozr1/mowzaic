@@ -11,20 +11,45 @@ import Account from '../pages/Account';
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import TermsOfService from '../pages/TermsOfService';
 import FAQ from '../pages/FAQ';
+import ProviderRegistrationPage from '../pages/ProviderRegistrationPage';
+import ProviderDashboard from '../pages/ProviderDashboard';
 
 const Router = () => {
   const { path } = useContext(NavigationContext);
-  const { isAuthenticated } = useAuthentication();
+  const { isAuthenticated, userRole } = useAuthentication();
 
-
-  // if (!isAuthenticated) {
-  //   return <Login />;
-  // }
   // Remove query parameters from path for matching
   const basePath = path.split('?')[0];
 
+  // Provider registration page is always rendered without layout (standalone)
+  if (basePath === '/provider' && !isAuthenticated) {
+    return <ProviderRegistrationPage />;
+  }
+
   // Render content based on path
   const renderContent = () => {
+    // Provider-specific routes
+    if (isAuthenticated && userRole === 'provider') {
+      switch (basePath) {
+        case '/provider/dashboard':
+          return <ProviderDashboard />;
+        case '/account':
+          return <Account />;
+        case '/provider':
+          return <ProviderDashboard />;
+        case '/privacy':
+          return <PrivacyPolicy />;
+        case '/terms':
+          return <TermsOfService />;
+        case '/faq':
+          return <FAQ />;
+        default:
+          // Provider lands on any other route -> show dashboard
+          return <ProviderDashboard />;
+      }
+    }
+
+    // Client/default routes
     switch (basePath) {
       case '/':
         return <LandingPage />;
@@ -45,8 +70,9 @@ const Router = () => {
     }
   };
 
-  // If it's the landing page and not authenticated, render without layout
-  if ((basePath === '/' || basePath === '/privacy' || basePath === '/terms' || basePath === '/faq') && !isAuthenticated) {
+  // Public pages without layout when not authenticated
+  const publicPaths = ['/', '/privacy', '/terms', '/faq', '/provider'];
+  if (publicPaths.includes(basePath) && !isAuthenticated) {
     return renderContent();
   }
 
@@ -62,4 +88,4 @@ Router.propTypes = {
   children: PropTypes.node
 };
 
-export default Router; 
+export default Router;

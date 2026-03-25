@@ -111,6 +111,7 @@ router.post("/", validateToken, asyncHandler(async (req, res) => {
         message,
         codes,
         hasPets,
+        providerId,
         // userId (Ignored, using req.user.id instead)
     } = req.body;
 
@@ -165,6 +166,7 @@ router.post("/", validateToken, asyncHandler(async (req, res) => {
             p_property_id: propertyId,
             p_date_of_service: selectedDate.bookingDate,
             p_message: message,
+            p_provider_id: providerId || null,
         });
 
         if (bookingError) {

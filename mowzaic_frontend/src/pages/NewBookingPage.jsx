@@ -89,7 +89,7 @@ function NewBookingPage() {
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${token}`
 				},
-				body: JSON.stringify({ ...formData, userId: user.id, fullAddress: fullAddress(formData.selectedAddress) })
+				body: JSON.stringify({ ...formData, userId: user.id, fullAddress: fullAddress(formData.selectedAddress), providerId: import.meta.env.VITE_PROVIDER_ID || null })
 			});
 
 
