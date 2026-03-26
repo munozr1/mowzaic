@@ -5,6 +5,7 @@ import { useLoginModal } from "../LoginModalContext";
 import { encodeJson } from "../utils";
 import { useNavigation } from "../NavigationContext";
 import { SERVICE_AREAS, TARGET_CITIES, TARGET_STATE, TARGET_STATE_CODE } from "../constants/serviceAreas";
+import { BACKEND_URL } from "../constants";
 import { toast, Toaster } from "sonner";
 
 const LandingPage = () => {
@@ -13,7 +14,7 @@ const LandingPage = () => {
 
   const trackDemand = async (status, place) => {
     try {
-      await fetch('/api/track-demand', {
+      await fetch(`${BACKEND_URL}/track-demand`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -2,24 +2,17 @@ import supabase from './db.js';
 
 /**
  * Validates Supabase JWT tokens using Supabase SDK
- * Checks for token in:
- * 1. HTTP-only cookie 'sb-access-token' (from frontend)
- * 2. Authorization header 'Bearer <token>'
- * 
+ * Reads token from Authorization header: Bearer <token>
  * Uses Supabase's getUser() method which handles HS256/ES256 verification internally
  */
 export const validateToken = async (req, res, next) => {
-  // Try to get token from cookie first (frontend sends it here)
-  let token = req.cookies?.['sb-access-token'];
-  
-  // Fallback to Authorization header
-  if (!token) {
-    const authHeader = req.header('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-    }
+  // Bearer token only — no cookie fallback
+  let token;
+  const authHeader = req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
   }
-  
+
   if (!token) {
     return res.status(401).json({ 
       message: 'Access denied, no token provided',

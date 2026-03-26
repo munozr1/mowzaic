@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./constants";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, BACKEND_URL } from "./constants";
 
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -27,14 +27,8 @@ export const AuthenticationProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
   const [userRole, setUserRole] = useState(null);
-
-  // Configure Supabase client for in-memory storage only
-  useEffect(() => {
-    supabase.auth.setSession = (session) => {
-      // No-op for persistence, handled by state
-      return Promise.resolve();
-    }
-  }, []);
+  // In-memory refresh token — not persisted to storage
+  const refreshTokenRef = useRef(null);
 
   // Check if user profile is complete and fetch role
   const checkProfileCompletion = async (userId) => {
@@ -57,50 +51,63 @@ export const AuthenticationProvider = ({ children }) => {
     setUserRole(data?.role || 'user');
   };
 
+  // Set authenticated state from backend response
+  const setAuthState = async ({ user: u, access_token, refresh_token }) => {
+    refreshTokenRef.current = refresh_token;
+
+    // Set session in Supabase client so RLS works
+    await supabase.auth.setSession({
+      access_token,
+      refresh_token,
+    });
+
+    setSession({ access_token, user: u });
+    setUser(u);
+    setIsAuthenticated(true);
+    if (u) checkProfileCompletion(u.id);
+  };
+
+  const clearAuthState = async () => {
+    refreshTokenRef.current = null;
+    await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
+    setIsAuthenticated(false);
+    setNeedsProfileCompletion(false);
+    setUserRole(null);
+  };
+
   const refreshSession = async () => {
+    const rt = refreshTokenRef.current;
+    if (!rt) {
+      await clearAuthState();
+      return null;
+    }
+
     try {
-      const res = await fetch('/api/auth/token');
-      if (res.status === 401) {
-        // Expected when not logged in
-        setSession(null);
-        setUser(null);
-        setIsAuthenticated(false);
-        return null; // Return null instead of throwing
-      }
-      if (!res.ok) throw new Error('Failed to refresh session');
-
-      const data = await res.json();
-      const { user, access_token, expires_in } = data;
-
-      const newSession = {
-        access_token,
-        user,
-        expires_in
-      };
-
-      // Manually set the session in Supabase client memory so RLS works
-      await supabase.auth.setSession({
-        access_token,
-        refresh_token: 'dummy', // Not used client-side anymore
+      const res = await fetch(`${BACKEND_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: rt }),
       });
 
-      setSession(newSession);
-      setUser(user);
-      setIsAuthenticated(true);
-      if (user) checkProfileCompletion(user.id);
+      if (!res.ok) {
+        await clearAuthState();
+        return null;
+      }
 
-      return newSession;
+      const data = await res.json();
+      await setAuthState(data);
+      return data;
     } catch (error) {
       console.error('Session refresh failed', error);
-      setSession(null);
-      setUser(null);
-      setIsAuthenticated(false);
-      throw error;
+      await clearAuthState();
+      return null;
     }
   };
 
   useEffect(() => {
-    // Handle OAuth callback - extract tokens from URL hash and set cookies
+    // Handle OAuth callback — extract tokens from URL hash
     const handleOAuthCallback = async () => {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const access_token = hashParams.get('access_token');
@@ -108,30 +115,31 @@ export const AuthenticationProvider = ({ children }) => {
 
       if (access_token && refresh_token) {
         try {
-          // Send tokens to serverless function to set HTTP-only cookies
-          const res = await fetch('/api/auth/set-session', {
+          // Validate tokens via backend
+          const res = await fetch(`${BACKEND_URL}/auth/set-session`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ access_token, refresh_token }),
           });
 
           if (!res.ok) {
-            throw new Error('Failed to set session cookies');
+            throw new Error('Failed to validate session');
           }
+
+          const data = await res.json();
+          // set-session returns { user, access_token, refresh_token }
+          await setAuthState({ ...data, refresh_token });
 
           // Clear hash from URL
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
 
-          // Refresh session to load user state
-          const newSession = await refreshSession();
-
           // Google OAuth doesn't support custom metadata like signUp does,
           // so if this callback landed on a /provider path, set role to 'provider'
-          if (newSession?.user && window.location.pathname.startsWith('/provider')) {
+          if (data.user && window.location.pathname.startsWith('/provider')) {
             const { error: roleError } = await supabase
               .from('users')
               .update({ role: 'provider' })
-              .eq('id', newSession.user.id);
+              .eq('id', data.user.id);
             if (!roleError) {
               setUserRole('provider');
             }
@@ -148,62 +156,39 @@ export const AuthenticationProvider = ({ children }) => {
     // Try OAuth callback first
     handleOAuthCallback().then((wasOAuthCallback) => {
       if (!wasOAuthCallback) {
-        // Normal session load if not OAuth callback
-        refreshSession().catch(() => {
-          setLoading(false);
-        }).finally(() => setLoading(false));
+        // No tokens in URL and no refresh token in memory — not logged in
+        // (In-memory tokens are lost on page refresh — this is expected)
+        setLoading(false);
+      } else {
+        setLoading(false);
       }
     });
 
-    // Refresher interval (refresh every 30 mins or somewhat before expiry)
-    // Access tokens usually last 1 hour.
+    // Refresh interval — rotate tokens every 45 minutes
     const interval = setInterval(() => {
-      if (isAuthenticated) {
+      if (refreshTokenRef.current) {
         refreshSession().catch(console.error);
       }
-    }, 45 * 60 * 1000); // 45 minutes
+    }, 45 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, []);
 
   const login = async (email, password) => {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${BACKEND_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed');
+    if (!res.ok) throw new Error(data.error || data.message || 'Login failed');
 
-    const { user, access_token } = data;
-
-    // Set in-memory for Supabase client
-    await supabase.auth.setSession({
-      access_token,
-      refresh_token: 'dummy',
-    });
-
-    setSession({ access_token, user });
-    setUser(user);
-    setIsAuthenticated(true);
-    checkProfileCompletion(user.id);
+    await setAuthState(data);
     return data;
   };
 
   const signInWithGoogle = async (returnUrl) => {
-    // Allows OAuth to flow as normal, but we need to handle the callback 
-    // to exchange the hash for cookies. This is tricky with pure client-side + cookie split.
-    // For now, let's keep the user flow:
-    // 1. Supabase OAuth redirects back to app.
-    // 2. App sees hash, calls supabase.auth.getSession() (client side exchange).
-    // 3. We typically need to intercept this token and send it to an endpoint to set the cookie.
-
-    // SIMPLE APPROACH:
-    // Let Supabase handle the redirect. The client will get a session in URL hash.
-    // We need a way to 'upgrade' that to our cookie system.
-    // For this migration, I will implement a 'sync' method if we detect a session from URL.
-
     const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
     const redirectTo = returnUrl ? `${baseUrl}${returnUrl}` : `${baseUrl}/book`;
 
@@ -223,10 +208,6 @@ export const AuthenticationProvider = ({ children }) => {
   };
 
   const register = async (email, password, metadata = {}) => {
-    // Registration still happens client side? Or needs proxy?
-    // If we want auto-login after register, we might need proxy or handling.
-    // Supabase usually signs in after signUp if email confirm is off.
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -236,26 +217,25 @@ export const AuthenticationProvider = ({ children }) => {
     });
 
     if (error) throw error;
-
-    // If we got a session immediately (email confirm off), we should sync it to cookies.
-    // Ideally we would move register to backend too, but for scope let's manually login after register if needed
-    // or just let them login manually.
-
     return data;
   };
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      const token = session?.access_token;
+      if (token) {
+        await fetch(`${BACKEND_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      }
     } catch (e) {
       console.error(e);
     }
-    await supabase.auth.signOut(); // Clear client state
-    setSession(null);
-    setUser(null);
-    setIsAuthenticated(false);
-    setNeedsProfileCompletion(false);
-    setUserRole(null);
+    await clearAuthState();
   };
 
 

@@ -1,218 +1,128 @@
 import express from 'express';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import supabase from './db.js';
-import { validateToken, validateUser } from './middleware.js';
+import supabase, { supabaseAdmin } from './db.js';
+import { validateToken } from './middleware.js';
 import logger from './logger.js';
-import { 
+import {
   createSupabaseClientWithAuth,
-  asyncHandler, 
-  ValidationError, 
-  AuthenticationError, 
-  DatabaseError 
+  asyncHandler,
+  ValidationError,
+  AuthenticationError,
+  DatabaseError
 } from './utils.js';
 
 const router = express.Router();
 
-const ACCESS_TOKEN_EXPIRY = '10m';
-const REFRESH_TOKEN_EXPIRY = '7d';
-
 // ==========================================
-// DEPRECATED: Custom JWT Authentication
+// Supabase Authentication Endpoints
 // ==========================================
-// These endpoints generate custom HS256 JWTs.
-// Frontend now uses Supabase authentication with ES256 tokens.
-// These routes are kept for backward compatibility but should not be used.
-// Use Supabase Auth (Vercel serverless functions) instead.
+// Pure Bearer token auth — no cookies.
+// Access + refresh tokens are returned in JSON responses.
+// Frontend stores them in memory.
 // ==========================================
 
-//New users
-router.post('/register', validateUser, asyncHandler(async (req, res) => {
-    const { email, password, firstName, lastName, phone } = req.body;
-
-    //input validation
-    if (!email || !password || !firstName || !lastName || !phone) {
-      throw new ValidationError('Missing required fields');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const result = await supabase
-      .from('users')
-      .insert({ 
-        email, 
-        password: hashedPassword, 
-        role: 'authenticated', 
-        first_name: firstName, 
-        last_name: lastName, 
-        phone 
-      })
-      .select('id, email, role')
-      .single();
-
-    if (result.error) {
-      throw new DatabaseError('Error creating user');
-    }
-
-    res.status(201).json({ 
-      message: 'User created successfully', 
-      user: result.data 
-    });
-}));
-
+// Login with email/password
 router.post('/login', asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    //input validation
-    if (!email || !password) {
-      throw new ValidationError('Email and password are required');
-    }
+  if (!email || !password) {
+    throw new ValidationError('Email and password are required');
+  }
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
+  const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (error) {
-      throw new DatabaseError('Error fetching user');
-    }
+  if (error) {
+    logger.warn('Login failed:', { email, error: error.message });
+    throw new AuthenticationError(error.message);
+  }
 
-    logger.info('User login attempt:', { email: user?.email });
-    logger.info('User:', { user });
+  const { session, user } = data;
 
-    if (!user) {
-      throw new AuthenticationError('Invalid credentials');
-    }
+  logger.info('Login successful:', { email: user.email });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      throw new AuthenticationError('Invalid credentials');
-    }
-
-    const accessToken = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email, 
-        role: 'authenticated', 
-        first_name: user.first_name, 
-        last_name: user.last_name, 
-        phone: user.phone
-      },
-      process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRY }
-    );
-
-    const refreshToken = jwt.sign(
-      { id: user.id },
-      process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: REFRESH_TOKEN_EXPIRY }
-    );
-
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.MODE === 'production',
-      sameSite: 'Strict',
-    });
-
-    logger.info('Login successful:', { accessToken });
-
-    res.json({ message: 'Login successful', accessToken });
+  res.json({
+    user,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_in: session.expires_in,
+  });
 }));
 
-// Refresh Access Token
+// Refresh session using refresh_token in body
 router.post('/refresh', asyncHandler(async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
-  logger.info('Refresh token received:', { refreshToken });
-  if (!refreshToken) {
+  const { refresh_token } = req.body;
+
+  if (!refresh_token) {
     throw new AuthenticationError('No refresh token provided');
   }
 
-  // Check if refresh token is blocked (Existing Logic - Good)
-  const { data: tokenBlocklist, error: blocklistError } = await supabase
-    .from('token_blocklist')
-    .select('*')
-    .eq('token', refreshToken);
+  const { data, error } = await supabaseAdmin.auth.refreshSession({
+    refresh_token,
+  });
 
-  if (blocklistError) {
-    throw new DatabaseError('Error checking token blocklist');
-  }
-
-  if (tokenBlocklist.length > 0) {
+  if (error) {
+    logger.warn('Token refresh failed:', { error: error.message });
     throw new AuthenticationError('Invalid refresh token');
   }
 
-  // Use a proper try/catch with Promise instead of a raw Promise constructor
-  try {
-    const userPayload = await new Promise((resolve, reject) => {
-      jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
-        if (err) {
-          return reject(new AuthenticationError('Invalid refresh token'));
-        }
-        resolve(user);
-      });
-    });
+  const { session, user } = data;
 
-    // 1. Fetch the user details using the ID from the decoded refresh token
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id, email, role, first_name, last_name, phone') // Select only the necessary fields
-      .eq('id', userPayload.id)
-      .single();
+  res.json({
+    user,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_in: session.expires_in,
+  });
+}));
 
-    if (userError || !user) {
-      // Consider invalidating the refresh token if the user is not found
-      throw new AuthenticationError('User not found or database error during refresh');
-    }
+// Validate OAuth callback tokens
+router.post('/set-session', asyncHandler(async (req, res) => {
+  const { access_token, refresh_token } = req.body;
 
-    // 2. Generate the new access token with the COMPLETE user data payload
-    const newAccessToken = jwt.sign(
-      { 
-        id: user.id, 
-        email: user.email, 
-        //role: user.role, // Use the correct role from the DB
-        role: 'authenticated', //TODO: unhardcode this maybe
-        first_name: user.first_name, 
-        last_name: user.last_name, 
-        phone: user.phone
-      },
-      process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRY }
-    );
-
-    res.json({ accessToken: newAccessToken });
-
-  } catch (err) {
-    // Re-throw the error to be caught by your asyncHandler error handling middleware
-    throw err; 
+  if (!access_token || !refresh_token) {
+    throw new ValidationError('access_token and refresh_token are required');
   }
+
+  // Validate the access token by fetching the user
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(access_token);
+
+  if (error || !user) {
+    logger.warn('set-session validation failed:', { error: error?.message });
+    throw new AuthenticationError('Invalid tokens');
+  }
+
+  res.json({
+    user,
+    access_token,
+    refresh_token,
+  });
 }));
 
-router.post('/logout', asyncHandler(async (req, res) => {
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) {
-      throw new AuthenticationError('No refresh token found');
-    }
+// Logout — revoke session server-side
+router.post('/logout', validateToken, asyncHandler(async (req, res) => {
+  const userId = req.user.id;
 
-    const { error } = await supabase
-      .from('token_blocklist')
-      .insert({ token: refreshToken });
+  const { error } = await supabaseAdmin.auth.admin.signOut(userId);
 
-    if (error) {
-      throw new DatabaseError('Error adding token to blocklist');
-    }
+  if (error) {
+    logger.warn('Logout error:', { userId, error: error.message });
+    // Don't throw — still clear client state
+  }
 
-    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'Strict' });
-    res.json({ message: 'Logged out' });
+  res.json({ message: 'Logged out' });
 }));
 
+// Health check for auth
 router.post('/ping', validateToken, (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     message: 'pong',
-    user: req.user 
+    user: req.user
   });
 });
 
+// Update user profile
 router.post('/update-user', validateToken, asyncHandler(async (req, res) => {
   const { first_name, last_name, phone } = req.body;
   const { id } = req.user;
@@ -232,19 +142,13 @@ router.post('/update-user', validateToken, asyncHandler(async (req, res) => {
     throw new DatabaseError('Failed to update user');
   }
 
-  res.status(200).json({ 
-    message: 'User updated successfully', 
-    user: data 
+  res.status(200).json({
+    message: 'User updated successfully',
+    user: data
   });
 }));
 
-router.get('/protected', validateToken, (req, res) => {
-  res.json({ 
-    message: 'This is a protected route', 
-    user: req.user 
-  });
-});
-
+// Get user by ID
 router.get('/user/:id', validateToken, asyncHandler(async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
@@ -257,7 +161,7 @@ router.get('/user/:id', validateToken, asyncHandler(async (req, res) => {
     .from('users')
     .select('*')
     .eq('id', req.params.id)
-    .single();  
+    .single();
 
   if (error) {
     throw new DatabaseError(`Failed to fetch user: ${error.message}`);
@@ -267,4 +171,3 @@ router.get('/user/:id', validateToken, asyncHandler(async (req, res) => {
 }));
 
 export { router as authRoutes };
-

@@ -32,7 +32,7 @@ function NewBookingPage() {
 	const trackDemand = async (status, formData) => {
 		try {
 			const fullAddr = fullAddress(formData.selectedAddress);
-			await fetch('/api/track-demand', {
+			await fetch(`${BACKEND_URL}/track-demand`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

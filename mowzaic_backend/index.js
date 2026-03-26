@@ -11,6 +11,7 @@ import { propertyRoutes } from "./properties.js";
 import providerRoutes from "./providers.js";
 import estimateRoutes from "./estimates.js";
 import subscriptionRoutes from "./subscriptions.js";
+import trackingRoutes from "./tracking.js";
 import logger from './logger.js';
 import { requestIdMiddleware, errorHandler } from './utils.js';
 
@@ -19,8 +20,17 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env' : '.env.developme
 dotenv.config({ path: envFile });
 
 const MODE = process.env.MODE;
+
+// ALLOWED_ORIGINS env var: comma-separated list of origins (e.g. "https://mowzaic.com,https://joselawns.com")
+const defaultOrigins = MODE === 'development'
+  ? ['http://localhost:5173', 'http://localhost:3001']
+  : ['https://www.mowzaic.com', 'https://mowzaic.com', 'https://api.mowzaic.com'];
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : defaultOrigins;
+
 const corsOptions = {
-  origin: MODE === 'development' ? ['http://localhost:5173', 'http://localhost:3001'] : ['https://www.mowzaic.com', 'https://mowzaic.com', 'https://api.mowzaic.com'],
+  origin: allowedOrigins,
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
@@ -96,13 +106,14 @@ app.use(cookieParser('secret', {
 app.use(requestIdMiddleware);
 
 // Routes
-app.use(authRoutes);
+app.use('/auth', authRoutes);
 app.use('/stripe', stripeRoutes);
 app.use('/book', bookingRoutes);
 app.use('/properties', propertyRoutes);
 app.use('/providers', providerRoutes);
 app.use('/estimates', estimateRoutes);
 app.use('/subscriptions', subscriptionRoutes);
+app.use(trackingRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({
