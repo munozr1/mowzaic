@@ -1,5 +1,9 @@
 @import "tailwindcss";
 :root {
+  /* Dynamic org branding colors — overridden by OrgContext on load */
+  --color-primary: #22c55e;
+  --color-primary-dark: #14532d;
+  --color-bg: #f0fdf4;
 
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

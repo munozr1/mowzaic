@@ -7,7 +7,7 @@ const router = express.Router();
 
 // Public endpoint — no auth required
 router.post('/track-demand', asyncHandler(async (req, res) => {
-  const { status, address, city, state, postal, phone, privacyAgreement, marketingConsent } = req.body;
+  const { status, address, city, state, postal, phone, privacyAgreement, marketingConsent, org_id } = req.body;
 
   if (!status || !address) {
     return res.status(400).json({ error: 'Missing required tracking fields' });
@@ -31,7 +31,8 @@ router.post('/track-demand', asyncHandler(async (req, res) => {
           marketing_consent: marketingConsent,
           ip_address: ip
         },
-        source: 'landing_page_validation'
+        source: 'landing_page_validation',
+        org_id: org_id || null
       }
     ]);
 

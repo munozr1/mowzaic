@@ -12,6 +12,7 @@ import providerRoutes from "./providers.js";
 import estimateRoutes from "./estimates.js";
 import subscriptionRoutes from "./subscriptions.js";
 import trackingRoutes from "./tracking.js";
+import organizationRoutes from "./organizations.js";
 import logger from './logger.js';
 import { requestIdMiddleware, errorHandler } from './utils.js';
 
@@ -114,6 +115,7 @@ app.use('/providers', providerRoutes);
 app.use('/estimates', estimateRoutes);
 app.use('/subscriptions', subscriptionRoutes);
 app.use(trackingRoutes);
+app.use('/organizations', organizationRoutes);
 
 app.get('/health', (req, res) => {
   res.status(200).json({

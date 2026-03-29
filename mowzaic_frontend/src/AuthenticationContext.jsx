@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, BACKEND_URL } from "./constants";
+import { useOrg } from "./OrgContext";
 
 // Initialize Supabase client
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -29,6 +30,7 @@ export const AuthenticationProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(null);
   // In-memory refresh token — not persisted to storage
   const refreshTokenRef = useRef(null);
+  const { orgId } = useOrg();
 
   // Check if user profile is complete and fetch role
   const checkProfileCompletion = async (userId) => {
@@ -135,13 +137,23 @@ export const AuthenticationProvider = ({ children }) => {
 
           // Google OAuth doesn't support custom metadata like signUp does,
           // so if this callback landed on a /provider path, set role to 'provider'
-          if (data.user && window.location.pathname.startsWith('/provider')) {
-            const { error: roleError } = await supabase
-              .from('users')
-              .update({ role: 'provider' })
-              .eq('id', data.user.id);
-            if (!roleError) {
-              setUserRole('provider');
+          // Also set org_id for OAuth users (not set via handle_new_user trigger)
+          if (data.user) {
+            const updates = {};
+            if (window.location.pathname.startsWith('/provider')) {
+              updates.role = 'provider';
+            }
+            if (orgId) {
+              updates.org_id = orgId;
+            }
+            if (Object.keys(updates).length > 0) {
+              const { error: updateError } = await supabase
+                .from('users')
+                .update(updates)
+                .eq('id', data.user.id);
+              if (!updateError && updates.role) {
+                setUserRole(updates.role);
+              }
             }
           }
         } catch (error) {
@@ -212,7 +224,7 @@ export const AuthenticationProvider = ({ children }) => {
       email,
       password,
       options: {
-        data: metadata,
+        data: { ...metadata, org_id: orgId },
       },
     });
 

@@ -131,7 +131,12 @@ router.post('/update-user', validateToken, asyncHandler(async (req, res) => {
     throw new ValidationError('Missing required fields');
   }
 
-  const { data, error } = await supabase
+  // Use authenticated client so RLS is enforced
+  const authHeader = req.headers.authorization;
+  const jwt = authHeader.split(' ')[1];
+  const client = createSupabaseClientWithAuth(jwt);
+
+  const { data, error } = await client
     .from('users')
     .update({ first_name, last_name, phone })
     .eq('id', id)

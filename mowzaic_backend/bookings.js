@@ -14,7 +14,8 @@ import logger from './logger.js';
 const router = express.Router();
 
 // Get availability this week, no need for jwt, anyone can check before booking
-router.get("/availability/this-week", asyncHandler(async (_, res) => {
+// Accepts optional ?org_id= query param to scope availability per org
+router.get("/availability/this-week", asyncHandler(async (req, res) => {
   const days = gen14days();
   //these are days that we are unavailable for example due to breaks
   const unavailableDays = [6, 0]; // 1 = Monday, 2 = Tuesday, 3 = Wednesday 4 = Thursday 5 = Friday 6 = Saturday 7 = Sunday
@@ -26,11 +27,18 @@ router.get("/availability/this-week", asyncHandler(async (_, res) => {
     return !unavailableDays.includes(dayOfWeek);
   });
 
-  // Get all bookings grouped by date
-  const { data, error } = await supabase
+  // Get all bookings grouped by date, scoped to org if provided
+  let query = supabase
     .from('bookings')
     .select('date_of_service')
     .gte('date_of_service', new Date().toISOString().split('T')[0]); // Only get future bookings
+
+  const orgId = req.query.org_id;
+  if (orgId) {
+    query = query.eq('org_id', orgId);
+  }
+
+  const { data, error } = await query;
   
   if (error) {
     throw new DatabaseError('Error fetching bookings');
@@ -146,7 +154,8 @@ router.post("/", validateToken, asyncHandler(async (req, res) => {
             _postal: selectedAddress.postal,
             _has_pets: hasPets ?? false,
             _coordinates: `(${selectedAddress.coordinates[0]},${selectedAddress.coordinates[1]})`,
-            _codes: codes || []
+            _codes: codes || [],
+            _org_id: req.user.org_id || null
         });
 
         if (propError) {
@@ -167,6 +176,7 @@ router.post("/", validateToken, asyncHandler(async (req, res) => {
             p_date_of_service: selectedDate.bookingDate,
             p_message: message,
             p_provider_id: providerId || null,
+            p_org_id: req.user.org_id || null,
         });
 
         if (bookingError) {
