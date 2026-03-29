@@ -1,4 +1,5 @@
 import { NavigationProvider } from './NavigationContext.jsx'
+import { OrgProvider } from './OrgContext.jsx'
 import { AuthenticationProvider, useAuthentication } from './AuthenticationContext.jsx'
 import { LoginModalProvider, useLoginModal } from './LoginModalContext.jsx'
 import Router from './components/Router'
@@ -35,13 +36,15 @@ function AppContent() {
 
 function App() {
 	return (
-		<AuthenticationProvider>
-			<LoginModalProvider>
-				<NavigationProvider>
-					<AppContent />
-				</NavigationProvider>
-			</LoginModalProvider>
-		</AuthenticationProvider>
+		<OrgProvider>
+			<AuthenticationProvider>
+				<LoginModalProvider>
+					<NavigationProvider>
+						<AppContent />
+					</NavigationProvider>
+				</LoginModalProvider>
+			</AuthenticationProvider>
+		</OrgProvider>
 	)
 }
 

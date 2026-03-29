@@ -5,15 +5,18 @@ import { useLoginModal } from "../LoginModalContext";
 import { encodeJson } from "../utils";
 import { useNavigation } from "../NavigationContext";
 import { SERVICE_AREAS, TARGET_CITIES, TARGET_STATE, TARGET_STATE_CODE } from "../constants/serviceAreas";
+import { BACKEND_URL } from "../constants";
 import { toast, Toaster } from "sonner";
+import { useOrg } from "../OrgContext";
 
 const LandingPage = () => {
   const { navigate } = useNavigation();
   const { openLoginModal } = useLoginModal();
+  const { org, orgId } = useOrg();
 
   const trackDemand = async (status, place) => {
     try {
-      await fetch('/api/track-demand', {
+      await fetch(`${BACKEND_URL}/track-demand`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -22,7 +25,8 @@ const LandingPage = () => {
           city: place.city,
           state: place.state,
           postal: place.postal,
-          phone: null
+          phone: null,
+          org_id: orgId
         })
       });
     } catch (err) {
@@ -76,7 +80,7 @@ const LandingPage = () => {
   return (
     <>
       <Toaster duration={10000} position="top-center" />
-      <div className="bg-[#f0fdf4] antialiased min-h-[100vh] flex flex-col">
+      <div className="bg-[var(--color-bg)] antialiased min-h-[100vh] flex flex-col">
         {/* Hero Section */}
         <div className="flex-1">
           <div className="container mx-auto px-4 flex justify-center pt-40 pb-32">
@@ -86,9 +90,15 @@ const LandingPage = () => {
               transition={{ duration: 0.8 }}
               className="max-w-xl w-full"
             >
-              <h2 className="text-5xl md:text-7xl font-bold text-[#14532d] text-center mb-6 tracking-tight">
-                mow delivered, <br />
-                <span className="text-[#22c55e]">just like that</span>
+              <h2 className="text-5xl md:text-7xl font-bold text-[var(--color-primary-dark)] text-center mb-6 tracking-tight">
+                {org?.headline ? (
+                  <>
+                    {org.headline.split(',')[0]},<br />
+                    <span className="text-[var(--color-primary)]">{org.headline.split(',').slice(1).join(',').trim()}</span>
+                  </>
+                ) : (
+                  <>mow delivered, <br /><span className="text-[var(--color-primary)]">just like that</span></>
+                )}
               </h2>
 
               <div className="flex flex-col space-y-4">
@@ -102,7 +112,7 @@ const LandingPage = () => {
               <div className="mt-4 text-center">
                 <button
                   onClick={() => openLoginModal()}
-                  className="hover:underline text-sm cursor-pointer bg-transparent border-none text-[#14532d]"
+                  className="hover:underline text-sm cursor-pointer bg-transparent border-none text-[var(--color-primary-dark)]"
                 >
                   or sign in to book service
                 </button>
@@ -116,24 +126,24 @@ const LandingPage = () => {
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <div className="text-sm text-gray-600">
-                © {new Date().getFullYear()} Mowzaic. All rights reserved.
+                © {new Date().getFullYear()} {org?.footer_text || 'Mowzaic'}. All rights reserved.
               </div>
               <div className="flex space-x-6">
                 <button
                   onClick={() => navigate('/privacy')}
-                  className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors cursor-pointer bg-transparent border-none"
+                  className="text-sm text-gray-600 hover:text-[var(--color-primary)] transition-colors cursor-pointer bg-transparent border-none"
                 >
                   Privacy Policy
                 </button>
                 <button
                   onClick={() => navigate('/terms')}
-                  className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors cursor-pointer bg-transparent border-none"
+                  className="text-sm text-gray-600 hover:text-[var(--color-primary)] transition-colors cursor-pointer bg-transparent border-none"
                 >
                   Terms of Service
                 </button>
                 <button
                   onClick={() => navigate('/faq')}
-                  className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors cursor-pointer bg-transparent border-none"
+                  className="text-sm text-gray-600 hover:text-[var(--color-primary)] transition-colors cursor-pointer bg-transparent border-none"
                 >
                   FAQ
                 </button>

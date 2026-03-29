@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { useAuthentication } from '../AuthenticationContext';
 import { useNavigation } from '../NavigationContext';
+import { useOrg } from '../OrgContext';
 
 const ProviderRegistrationPage = () => {
   const { register, login, signInWithGoogle, isAuthenticated, userRole } = useAuthentication();
   const { navigate } = useNavigation();
+  const { orgName } = useOrg();
   const [mode, setMode] = useState('register');
   const [formData, setFormData] = useState({
     email: '',
@@ -71,7 +73,7 @@ const ProviderRegistrationPage = () => {
   };
 
   return (
-    <div className="bg-[#f0fdf4] antialiased min-h-[100vh] flex flex-col">
+    <div className="bg-[var(--color-bg)] antialiased min-h-[100vh] flex flex-col">
       <div className="flex-1">
         <div className="container mx-auto px-4 flex justify-center pt-20 pb-16">
           <motion.div
@@ -80,10 +82,10 @@ const ProviderRegistrationPage = () => {
             transition={{ duration: 0.8 }}
             className="max-w-md w-full"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-[#14532d] text-center mb-2 tracking-tight">
-              mowzaic
+            <h2 className="text-4xl md:text-5xl font-bold text-[var(--color-primary-dark)] text-center mb-2 tracking-tight">
+              {orgName}
             </h2>
-            <p className="text-center text-[#14532d]/70 mb-8 text-lg">
+            <p className="text-center text-[var(--color-primary-dark)]/70 mb-8 text-lg">
               provider portal
             </p>
 
@@ -208,7 +210,7 @@ const ProviderRegistrationPage = () => {
                     setError('');
                     setEmailError('');
                   }}
-                  className="text-sm font-medium text-[#2EB966] hover:text-[#2EB966]/80"
+                  className="text-sm font-medium text-[var(--color-primary)] hover:text-[var(--color-primary)]/80"
                 >
                   {mode === 'register' ? 'sign in' : 'create one'}
                 </button>
@@ -223,18 +225,18 @@ const ProviderRegistrationPage = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-gray-600">
-              &copy; {new Date().getFullYear()} Mowzaic. All rights reserved.
+              &copy; {new Date().getFullYear()} {orgName}. All rights reserved.
             </div>
             <div className="flex space-x-6">
               <button
                 onClick={() => navigate('/privacy')}
-                className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors cursor-pointer bg-transparent border-none"
+                className="text-sm text-gray-600 hover:text-[var(--color-primary)] transition-colors cursor-pointer bg-transparent border-none"
               >
                 Privacy Policy
               </button>
               <button
                 onClick={() => navigate('/terms')}
-                className="text-sm text-gray-600 hover:text-[#22c55e] transition-colors cursor-pointer bg-transparent border-none"
+                className="text-sm text-gray-600 hover:text-[var(--color-primary)] transition-colors cursor-pointer bg-transparent border-none"
               >
                 Terms of Service
               </button>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Menu, X, Home, UserCircle, CalendarPlus, LogOut, ChevronRight, LayoutDashboard } from "lucide-react";
 import { useNavigation } from "../NavigationContext";
 import { useAuthentication } from "../AuthenticationContext";
+import { useOrg } from "../OrgContext";
 import PropTypes from "prop-types";
 
 const CLIENT_PAGE_TITLES = {
@@ -20,6 +21,7 @@ const PageLayout = ({ children }) => {
   const [isMobile, setIsMobile] = useState(false);
   const { isAuthenticated, logout, user, userRole } = useAuthentication();
   const { path, navigate } = useNavigation();
+  const { orgName } = useOrg();
 
   const handleLogout = async () => {
     await logout();
@@ -76,10 +78,10 @@ const PageLayout = ({ children }) => {
             onClick={() => navigate(defaultPath)}
             className="text-lg font-bold tracking-tight text-gray-900 hover:opacity-80 transition-opacity"
           >
-            mowzaic
+            {orgName}
           </button>
           {isProvider && (
-            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-medium text-[var(--color-primary-dark)] bg-[var(--color-bg)] px-2 py-0.5 rounded-full">
               provider
             </span>
           )}
@@ -106,7 +108,7 @@ const PageLayout = ({ children }) => {
                 }}
                 className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-emerald-50 text-emerald-700"
+                    ? "bg-[var(--color-bg)] text-[var(--color-primary-dark)]"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
@@ -115,13 +117,13 @@ const PageLayout = ({ children }) => {
                   strokeWidth={isActive ? 2 : 1.75}
                   className={
                     isActive
-                      ? "text-emerald-600"
+                      ? "text-[var(--color-primary)]"
                       : "text-gray-400 group-hover:text-gray-600"
                   }
                 />
                 {item.name}
                 {isActive && (
-                  <ChevronRight size={14} className="ml-auto text-emerald-400" />
+                  <ChevronRight size={14} className="ml-auto text-[var(--color-primary)]" />
                 )}
               </button>
             );
@@ -131,7 +133,7 @@ const PageLayout = ({ children }) => {
         {/* User section at bottom */}
         <div className="border-t border-gray-200 p-3">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-bg)] text-sm font-semibold text-[var(--color-primary-dark)]">
               {userInitial}
             </div>
             <div className="min-w-0 flex-1">

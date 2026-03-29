@@ -158,7 +158,7 @@ const ProviderDashboard = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-[#2EB966] mb-6">My Properties</h1>
+      <h1 className="text-2xl font-bold text-[var(--color-primary)] mb-6">My Properties</h1>
 
       {properties.length === 0 ? (
         <div className="bg-white rounded-md shadow-sm p-8 text-center">
@@ -291,7 +291,7 @@ const ProviderDashboard = () => {
                             <button
                               onClick={() => handleCreateEstimate(property.id)}
                               disabled={form.loading || !form.price}
-                              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2EB966] text-white rounded-md hover:bg-[#25A057] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--color-primary)] text-white rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                             >
                               <Send size={14} />
                               {form.loading ? 'Sending...' : 'Send Estimate'}

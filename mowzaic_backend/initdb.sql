@@ -10,6 +10,7 @@ DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.create_full_booking_transaction(integer,uuid,timestamp without time zone,text) CASCADE;
 DROP FUNCTION IF EXISTS public.create_full_booking_transaction(uuid,uuid,timestamp without time zone,text) CASCADE;
 DROP FUNCTION IF EXISTS public.create_full_booking_transaction(uuid,uuid,timestamp without time zone,text,uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.create_full_booking_transaction(uuid,uuid,timestamp without time zone,text,uuid,uuid) CASCADE;
 DROP TABLE IF EXISTS public.bookings CASCADE;
 DROP TABLE IF EXISTS public.estimates CASCADE;
 DROP TABLE IF EXISTS public.events CASCADE;
@@ -20,6 +21,7 @@ DROP TABLE IF EXISTS public.subscriptions CASCADE;
 DROP TABLE IF EXISTS public.token_blocklist CASCADE;
 DROP TABLE IF EXISTS public.user_properties CASCADE;
 DROP TABLE IF EXISTS public.users CASCADE;
+DROP TABLE IF EXISTS public.organizations CASCADE;
 DROP TYPE IF EXISTS public.user_role CASCADE;
 DROP TYPE IF EXISTS public.service_status CASCADE;
 DROP TYPE IF EXISTS public.payment_status CASCADE;
@@ -59,6 +61,26 @@ END$$;
 
 -- 2) Create tables
 
+-- organizations (multi-tenant root entity)
+CREATE TABLE IF NOT EXISTS public.organizations (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  slug text NOT NULL UNIQUE,
+  domain text UNIQUE,
+  logo_url text,
+  primary_color text DEFAULT '#22c55e',
+  primary_color_dark text DEFAULT '#14532d',
+  background_color text DEFAULT '#f0fdf4',
+  headline text DEFAULT 'mow delivered, just like that',
+  tagline text,
+  footer_text text,
+  stripe_account_id text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_organizations_domain ON public.organizations(domain);
+CREATE INDEX IF NOT EXISTS idx_organizations_slug ON public.organizations(slug);
+
 -- users
 CREATE TABLE IF NOT EXISTS public.users (
   -- According to refreshed snapshot: id is uuid (unique) and used as primary key
@@ -72,6 +94,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   source text DEFAULT 'mowzaic.com',
   stripe_id text,
   promo_opt boolean DEFAULT false,
+  org_id uuid,
   CONSTRAINT users_pkey PRIMARY KEY (id)
 );
 
@@ -85,6 +108,7 @@ CREATE TABLE IF NOT EXISTS public.properties (
   coordinates point,
   codes jsonb DEFAULT '[]'::jsonb,
   has_pets boolean DEFAULT false,
+  org_id uuid,
   CONSTRAINT properties_pkey PRIMARY KEY (id)
 );
 
@@ -95,6 +119,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
   message text CHECK (length(message) <= 500),
   created_at timestamp DEFAULT now(),
   property_id uuid,
+  org_id uuid,
   CONSTRAINT messages_pkey PRIMARY KEY (id)
 );
 
@@ -115,6 +140,7 @@ CREATE TABLE IF NOT EXISTS public.estimates (
   property_id uuid,
   released_at timestamptz,
   released boolean DEFAULT false,
+  org_id uuid,
   CONSTRAINT estimates_pkey PRIMARY KEY (id)
 );
 
@@ -131,6 +157,7 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
   user_id uuid,
   stripe_subscription_id text,
   next_service_date timestamp,
+  org_id uuid,
   CONSTRAINT subscriptions_pkey PRIMARY KEY (id)
 );
 
@@ -146,6 +173,7 @@ CREATE TABLE IF NOT EXISTS public.user_properties (
   user_id uuid,
   property_id uuid,
   deleted_at timestamptz,
+  org_id uuid,
   CONSTRAINT user_properties_pkey PRIMARY KEY (id),
   CONSTRAINT unique_user_property UNIQUE(user_id, property_id)
 );
@@ -174,6 +202,7 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   issue_flag boolean DEFAULT false CHECK (issue_flag = ANY (ARRAY[true, false])),
   property_id uuid,
   payment_intent_id text,
+  org_id uuid,
   CONSTRAINT bookings_pkey PRIMARY KEY (id)
 );
 
@@ -189,6 +218,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   metadata jsonb,
   source text DEFAULT 'internal'::text,
   created_at timestamp DEFAULT now(),
+  org_id uuid,
   CONSTRAINT events_pkey PRIMARY KEY (id)
 );
 
@@ -253,6 +283,24 @@ ALTER TABLE IF EXISTS public.user_properties
 ALTER TABLE IF EXISTS public.user_properties
   ADD CONSTRAINT user_properties_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
 
+-- org_id foreign keys
+ALTER TABLE IF EXISTS public.users
+  ADD CONSTRAINT users_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id);
+ALTER TABLE IF EXISTS public.properties
+  ADD CONSTRAINT properties_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id);
+ALTER TABLE IF EXISTS public.bookings
+  ADD CONSTRAINT bookings_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id);
+ALTER TABLE IF EXISTS public.estimates
+  ADD CONSTRAINT estimates_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id);
+ALTER TABLE IF EXISTS public.subscriptions
+  ADD CONSTRAINT subscriptions_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id);
+ALTER TABLE IF EXISTS public.messages
+  ADD CONSTRAINT messages_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id);
+ALTER TABLE IF EXISTS public.user_properties
+  ADD CONSTRAINT user_properties_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id);
+ALTER TABLE IF EXISTS public.events
+  ADD CONSTRAINT events_org_id_fkey FOREIGN KEY (org_id) REFERENCES public.organizations(id);
+
 -- 4) Indexes & unique constraints observed
 -- users.email and users.phone already declared UNIQUE in table creation above.
 -- users.id is PK (uuid) already set.
@@ -263,6 +311,16 @@ CREATE INDEX IF NOT EXISTS idx_users_phone ON public.users(phone);
 
 CREATE INDEX IF NOT EXISTS idx_user_properties_user_id ON public.user_properties(user_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_customer_id ON public.bookings(customer_id);
+
+-- org_id indexes for multi-tenant queries
+CREATE INDEX IF NOT EXISTS idx_users_org_id ON public.users(org_id);
+CREATE INDEX IF NOT EXISTS idx_properties_org_id ON public.properties(org_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_org_id ON public.bookings(org_id);
+CREATE INDEX IF NOT EXISTS idx_estimates_org_id ON public.estimates(org_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_org_id ON public.subscriptions(org_id);
+CREATE INDEX IF NOT EXISTS idx_messages_org_id ON public.messages(org_id);
+CREATE INDEX IF NOT EXISTS idx_user_properties_org_id ON public.user_properties(org_id);
+CREATE INDEX IF NOT EXISTS idx_events_org_id ON public.events(org_id);
 
 -- 5) Placeholder auth schema and example trigger/function
 -- Create auth schema if missing
@@ -293,6 +351,7 @@ SECURITY DEFINER
 AS $$
 DECLARE
   _role public.user_role;
+  _org_id uuid;
 BEGIN
   -- Read role from user metadata if provided (e.g., provider registration)
   -- Default to 'user' if not specified or invalid
@@ -306,9 +365,16 @@ BEGIN
     _role := 'user';
   END IF;
 
+  -- Read org_id from user metadata if provided (multi-tenant signup)
+  BEGIN
+    _org_id := (NEW.raw_user_meta_data->>'org_id')::uuid;
+  EXCEPTION WHEN OTHERS THEN
+    _org_id := NULL;
+  END;
+
   -- If a new auth user is created, insert into public.users using same uuid
-  INSERT INTO public.users (id, email, source, password, role)
-  VALUES (NEW.id, NEW.email, 'auth', 'oauth', _role)
+  INSERT INTO public.users (id, email, source, password, role, org_id)
+  VALUES (NEW.id, NEW.email, 'auth', 'oauth', _role, _org_id)
   ON CONFLICT (id) DO NOTHING;
 
   RETURN NEW;
@@ -324,7 +390,8 @@ CREATE OR REPLACE FUNCTION public.check_and_create_property(
     _postal text,
     _has_pets boolean,
     _coordinates point,
-    _codes jsonb
+    _codes jsonb,
+    _org_id uuid DEFAULT NULL
 )
 RETURNS json
 LANGUAGE plpgsql
@@ -338,18 +405,19 @@ DECLARE
 BEGIN
     -- Get the authenticated user's ID from JWT
     user_id_from_jwt := auth.uid();
-    
+
     IF user_id_from_jwt IS NULL THEN
         RAISE EXCEPTION 'User not authenticated';
     END IF;
 
-    -- Check if property exists with same address/city/state/postal
+    -- Check if property exists with same address/city/state/postal (scoped to org if provided)
     SELECT * INTO existing_property_record
     FROM public.properties
     WHERE address = _address
       AND city = _city
       AND state = _state
       AND postal = _postal
+      AND (_org_id IS NULL OR org_id = _org_id)
     LIMIT 1;
 
     IF existing_property_record.id IS NOT NULL THEN
@@ -366,20 +434,20 @@ BEGIN
             RETURN row_to_json(existing_property_record);
         ELSE
             -- Create new association
-            INSERT INTO public.user_properties (property_id, user_id, deleted_at)
-            VALUES (existing_property_record.id, user_id_from_jwt, NULL);
-            
+            INSERT INTO public.user_properties (property_id, user_id, deleted_at, org_id)
+            VALUES (existing_property_record.id, user_id_from_jwt, NULL, _org_id);
+
             RETURN row_to_json(existing_property_record);
         END IF;
     ELSE
         -- Property doesn't exist, create it
-        INSERT INTO public.properties (address, city, state, postal, has_pets, coordinates, codes)
-        VALUES (_address, _city, _state, _postal, _has_pets, _coordinates, _codes)
+        INSERT INTO public.properties (address, city, state, postal, has_pets, coordinates, codes, org_id)
+        VALUES (_address, _city, _state, _postal, _has_pets, _coordinates, _codes, _org_id)
         RETURNING * INTO property_record;
 
         -- Create association
-        INSERT INTO public.user_properties (property_id, user_id, deleted_at)
-        VALUES (property_record.id, user_id_from_jwt, NULL);
+        INSERT INTO public.user_properties (property_id, user_id, deleted_at, org_id)
+        VALUES (property_record.id, user_id_from_jwt, NULL, _org_id);
 
         RETURN row_to_json(property_record);
     END IF;
@@ -394,7 +462,8 @@ CREATE OR REPLACE FUNCTION public.create_full_booking_transaction(
     p_property_id uuid,
     p_date_of_service timestamp,
     p_message text,
-    p_provider_id uuid DEFAULT NULL
+    p_provider_id uuid DEFAULT NULL,
+    p_org_id uuid DEFAULT NULL
 )
 RETURNS json
 LANGUAGE plpgsql
@@ -412,19 +481,19 @@ BEGIN
     END IF;
 
     -- Create estimate
-    INSERT INTO public.estimates (property_id, price_cents)
-    VALUES (p_property_id, NULL)
+    INSERT INTO public.estimates (property_id, price_cents, org_id)
+    VALUES (p_property_id, NULL, p_org_id)
     RETURNING id INTO new_estimate_id;
 
     -- Create subscription
-    INSERT INTO public.subscriptions (estimate_id, property_id, user_id, status)
-    VALUES (new_estimate_id, p_property_id, p_user_id, 'pending')
+    INSERT INTO public.subscriptions (estimate_id, property_id, user_id, status, org_id)
+    VALUES (new_estimate_id, p_property_id, p_user_id, 'pending', p_org_id)
     RETURNING id INTO new_subscription_id;
 
     -- Create message if provided
     IF p_message IS NOT NULL AND p_message != '' THEN
-        INSERT INTO public.messages (user_id, property_id, message)
-        VALUES (p_user_id, p_property_id, p_message)
+        INSERT INTO public.messages (user_id, property_id, message, org_id)
+        VALUES (p_user_id, p_property_id, p_message, p_org_id)
         RETURNING id INTO new_message_id;
     END IF;
 
@@ -437,7 +506,8 @@ BEGIN
         message_id,
         service_status,
         payment_status,
-        provider_id
+        provider_id,
+        org_id
     )
     VALUES (
         p_user_id,
@@ -447,7 +517,8 @@ BEGIN
         new_message_id,
         'scheduled',
         'pending',
-        p_provider_id
+        p_provider_id,
+        p_org_id
     )
     RETURNING * INTO new_booking_record;
 
@@ -492,6 +563,21 @@ GRANT EXECUTE ON FUNCTION public.create_full_booking_transaction TO authenticate
 --   true
 -- )
 -- ON CONFLICT (id) DO NOTHING;
+
+-- 7) Seed default organization
+INSERT INTO public.organizations (id, name, slug, domain, primary_color, primary_color_dark, background_color, headline, footer_text)
+VALUES (
+  '00000000-0000-0000-0000-000000000001'::uuid,
+  'Mowzaic',
+  'mowzaic',
+  'mowzaic.com',
+  '#22c55e',
+  '#14532d',
+  '#f0fdf4',
+  'mow delivered, just like that',
+  'Mowzaic'
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- ============================================
 -- End of recreation script

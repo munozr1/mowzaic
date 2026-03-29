@@ -6,8 +6,24 @@ import { DatabaseError, createSupabaseClientWithAuth} from './utils.js';
 import { customerDeleted ,customerCreated ,chargeSucceeded, chargeUpdated, checkoutSessionCompleted, paymentIntentSucceeded, subscriptionCreated, invoicePaymentSucceeded, subscriptionDeleted, invoicePaymentFailed } from './stripeWebhookFunctions.js';
 import stripe from './stripeClient.js';
 
-const DOMAIN = process.env.MODE === 'development' ? 'http://localhost:5173' : 'https://www.mowzaic.com';
-const returnUrl = `${DOMAIN}/book`;
+const DEFAULT_DOMAIN = process.env.MODE === 'development' ? 'http://localhost:5173' : 'https://www.mowzaic.com';
+
+// Helper to get the return URL for the user's org domain
+async function getOrgReturnUrl(orgId) {
+  if (!orgId) return `${DEFAULT_DOMAIN}/book`;
+  try {
+    const { data } = await supabase
+      .from('organizations')
+      .select('domain')
+      .eq('id', orgId)
+      .single();
+    if (data?.domain) {
+      const protocol = process.env.MODE === 'development' ? 'http' : 'https';
+      return `${protocol}://${data.domain}/book`;
+    }
+  } catch { /* fall through */ }
+  return `${DEFAULT_DOMAIN}/book`;
+}
 const router = express.Router();
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -176,10 +192,11 @@ router.post('/create-checkout-session', validateToken, async (req, res) => {
             line_items: [item],
             mode: 'payment',
             ui_mode: 'embedded',
-            return_url: `${returnUrl}?booking=${bookingId}`,
+            return_url: `${await getOrgReturnUrl(req.user.org_id)}?booking=${bookingId}`,
             metadata: {
                 bookingId: bookingId,
-                userId: userId, // Useful for the webhook to find the user
+                userId: userId,
+                orgId: req.user.org_id || '',
             },
         });
 
@@ -311,14 +328,15 @@ router.post('/create-subscription', validateToken, async (req, res) => {
                 },
                 quantity: 1,
             }],
-            success_url: `${returnUrl}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${returnUrl}/subscription-cancel`,
+            success_url: `${await getOrgReturnUrl(req.user.org_id)}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${await getOrgReturnUrl(req.user.org_id)}/subscription-cancel`,
             metadata: {
                 userId: userId,
                 propertyId: estimate.property_id,
                 estimateId: estimateId,
                 frequency: frequency,
-                nextServiceDate: nextServiceDate.toISOString()
+                nextServiceDate: nextServiceDate.toISOString(),
+                orgId: req.user.org_id || ''
             },
         });
 
@@ -330,9 +348,9 @@ router.post('/create-subscription', validateToken, async (req, res) => {
                 property_id: estimate.property_id,
                 estimate_id: estimateId,
                 frequency: frequency,
-                status: 'pending', // Will be updated to 'active' via webhook
-                next_service_date: nextServiceDate.toISOString()
-                // stripe_subscription_id will be set by webhook
+                status: 'pending',
+                next_service_date: nextServiceDate.toISOString(),
+                org_id: req.user.org_id || null
             })
             .select()
             .single();

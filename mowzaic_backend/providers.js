@@ -65,6 +65,7 @@ router.get("/dashboard", validateToken, requireProvider, asyncHandler(async (req
       )
     `)
     .eq('provider_id', providerId)
+    .eq('org_id', req.user.org_id)
     .order('date_of_service', { ascending: false });
 
   if (bookingsError) {
@@ -164,7 +165,7 @@ router.post("/create-estimate", validateToken, requireProvider, asyncHandler(asy
 
   const { data, error } = await supabase
     .from('estimates')
-    .insert({ property_id: propertyId, price_cents: priceCents })
+    .insert({ property_id: propertyId, price_cents: priceCents, org_id: req.user.org_id })
     .select()
     .single();
 
@@ -188,6 +189,7 @@ router.patch("/estimates/:id/release", validateToken, requireProvider, asyncHand
     .from('estimates')
     .select('*, properties(id)')
     .eq('id', estimateId)
+    .eq('org_id', req.user.org_id)
     .single();
 
   if (fetchError || !existing) {
