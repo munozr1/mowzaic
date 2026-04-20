@@ -9,6 +9,7 @@ import DayCard from "./DayCard";
 import { decodeJson, getParam } from "../utils";
 import { BACKEND_URL } from "../constants";
 import { useAuthentication } from "../AuthenticationContext";
+import { useOrg } from "../OrgContext";
 
 function gen14days() {
   const today = new Date();
@@ -32,11 +33,15 @@ const BookingFormDetails = ({ onSubmit }) => {
   const additionalOptions = ['call on arrival', 'text on arrival', 'no contact', 'all electric'];
   const timeSlots = ['early (7am-9am)', 'mid (10am-12pm)', 'late (1pm-4pm)', 'anytime'];
   const { user } = useAuthentication();
+  const { orgId } = useOrg();
 
   useEffect(() => {
     const fetchAvailability = async () => {
       try {
-        const response = await fetch(`${BACKEND_URL}/book/availability/this-week`);
+        const url = orgId
+          ? `${BACKEND_URL}/book/availability/this-week?org_id=${orgId}`
+          : `${BACKEND_URL}/book/availability/this-week`;
+        const response = await fetch(url);
         if (!response.ok) {
           throw new Error(`Failed to fetch availability: ${response.status}`);
         }

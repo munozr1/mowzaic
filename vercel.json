@@ -1,11 +1,11 @@
 {
   "framework": "vite",
-  "installCommand": "cd mowzaic_frontend && npm install && cd ../api && npm install",
+  "installCommand": "cd mowzaic_frontend && npm install",
   "buildCommand": "cd mowzaic_frontend && npm run build",
   "outputDirectory": "mowzaic_frontend/dist",
   "devCommand": "cd mowzaic_frontend && npx vite",
   "routes": [
     { "handle": "filesystem" },
-    { "src": "/(?!api)[^.]+", "dest": "/index.html", "status": 200 }
+    { "src": "/[^.]+", "dest": "/index.html", "status": 200 }
   ]
 }

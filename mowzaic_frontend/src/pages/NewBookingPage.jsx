@@ -11,6 +11,7 @@ import BookingStatus from '../components/BookingStatus';
 import { BACKEND_URL } from '../constants';
 import { TARGET_CITIES } from '../constants/serviceAreas';
 import { toast, Toaster } from "sonner";
+import { useOrg } from '../OrgContext';
 
 function NewBookingPage() {
 	const [bookingState, setBookingState] = useState('fill-form');
@@ -19,6 +20,7 @@ function NewBookingPage() {
 	const { isAuthenticated, token, user } = useAuthentication();
 	const { navigate } = useNavigation();
 	const { openLoginModal } = useLoginModal();
+	const { orgId } = useOrg();
 	const [bookingId, setBookingId] = useState(null);
 
 	useEffect(() => {
@@ -32,7 +34,7 @@ function NewBookingPage() {
 	const trackDemand = async (status, formData) => {
 		try {
 			const fullAddr = fullAddress(formData.selectedAddress);
-			await fetch('/api/track-demand', {
+			await fetch(`${BACKEND_URL}/track-demand`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -89,7 +91,7 @@ function NewBookingPage() {
 					'Content-Type': 'application/json',
 					'Authorization': `Bearer ${token}`
 				},
-				body: JSON.stringify({ ...formData, userId: user.id, fullAddress: fullAddress(formData.selectedAddress), providerId: import.meta.env.VITE_PROVIDER_ID || null })
+				body: JSON.stringify({ ...formData, userId: user.id, fullAddress: fullAddress(formData.selectedAddress), providerId: null, orgId: orgId })
 			});
 
 

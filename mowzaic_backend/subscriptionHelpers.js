@@ -61,7 +61,7 @@ function adjustToAvailableDay(date, unavailableDays) {
  */
 export async function createSubscriptionBookings(subscription) {
   try {
-    const { id, frequency, next_service_date, property_id, user_id, estimate_id } = subscription;
+    const { id, frequency, next_service_date, property_id, user_id, estimate_id, org_id } = subscription;
 
     // Fetch estimate to get pricing
     const { data: estimate, error: estimateError } = await supabaseAdmin
@@ -92,8 +92,9 @@ export async function createSubscriptionBookings(subscription) {
         date_of_service: adjustedDate.toISOString(),
         service_status: 'scheduled',
         payment_status: 'pending',
-        provider_id: null, // Provider assignment handled separately
-        message_id: null
+        provider_id: null,
+        message_id: null,
+        org_id: org_id || null
       });
 
       // Calculate next date in the series
@@ -131,7 +132,7 @@ export async function createNextSubscriptionBooking(subscriptionId) {
     // Fetch subscription details
     const { data: subscription, error: subError } = await supabaseAdmin
       .from('subscriptions')
-      .select('id, frequency, property_id, user_id, estimate_id, next_service_date')
+      .select('id, frequency, property_id, user_id, estimate_id, next_service_date, org_id')
       .eq('id', subscriptionId)
       .single();
 
@@ -186,7 +187,8 @@ export async function createNextSubscriptionBooking(subscriptionId) {
         service_status: 'scheduled',
         payment_status: 'pending',
         provider_id: null,
-        message_id: null
+        message_id: null,
+        org_id: subscription.org_id || null
       })
       .select('id')
       .single();

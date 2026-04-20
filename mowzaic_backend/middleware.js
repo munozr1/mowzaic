@@ -1,43 +1,49 @@
 import supabase from './db.js';
 
 /**
+ * Decode JWT payload without verification (verification is done by supabase.auth.getUser)
+ */
+function decodeJwtPayload(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Validates Supabase JWT tokens using Supabase SDK
- * Checks for token in:
- * 1. HTTP-only cookie 'sb-access-token' (from frontend)
- * 2. Authorization header 'Bearer <token>'
- * 
- * Uses Supabase's getUser() method which handles HS256/ES256 verification internally
+ * Reads token from Authorization header: Bearer <token>
+ * Extracts org_id from JWT app_metadata (set by custom access token hook)
+ * Falls back to DB lookup if org_id not in JWT
  */
 export const validateToken = async (req, res, next) => {
-  // Try to get token from cookie first (frontend sends it here)
-  let token = req.cookies?.['sb-access-token'];
-  
-  // Fallback to Authorization header
-  if (!token) {
-    const authHeader = req.header('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.split(' ')[1];
-    }
+  // Bearer token only — no cookie fallback
+  let token;
+  const authHeader = req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
   }
-  
+
   if (!token) {
-    return res.status(401).json({ 
+    return res.status(401).json({
       message: 'Access denied, no token provided',
-      error: 'missing_token' 
+      error: 'missing_token'
     });
   }
 
   try {
     // Use Supabase SDK to verify the token - it handles ES256/HS256 automatically
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+
     if (error || !user) {
       console.error('Token verification failed:', error?.message || 'No user found');
-      console.error('Supabase URL:', process.env.SUPABASE_URL);
-      console.error('Token (first 20 chars):', token.substring(0, 20) + '...');
-      return res.status(401).json({ 
+      return res.status(401).json({
         message: 'Invalid token',
-        error: error?.message || 'authentication_failed' 
+        error: error?.message || 'authentication_failed'
       });
     }
 
@@ -46,16 +52,33 @@ export const validateToken = async (req, res, next) => {
       id: user.id,
       email: user.email,
       role: user.role,
-      ...user.user_metadata // Custom metadata (firstName, lastName, etc.)
+      ...user.user_metadata
     };
-    
+
+    // Extract org_id from JWT app_metadata (set by custom access token hook)
+    const payload = decodeJwtPayload(token);
+    const orgIdFromJwt = payload?.app_metadata?.org_id;
+
+    if (orgIdFromJwt) {
+      req.user.org_id = orgIdFromJwt;
+    } else {
+      // Fallback: look up org_id from users table
+      const { data: userData } = await supabase
+        .from('users')
+        .select('org_id')
+        .eq('id', user.id)
+        .single();
+
+      req.user.org_id = userData?.org_id || null;
+    }
+
     next();
   } catch (error) {
     console.error('Token verification failed:', error.message);
-    
-    return res.status(401).json({ 
+
+    return res.status(401).json({
       message: 'Invalid token',
-      error: error.message 
+      error: error.message
     });
   }
 };
